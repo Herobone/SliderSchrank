@@ -98,7 +98,7 @@ fun SliderSchrankApp() {
         ) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
                 when (currentDestination) {
-                    AppDestinations.HOME -> Greeting(name = "Home")
+                    AppDestinations.HOME -> HomeScreen()
                     AppDestinations.KAMERA -> Greeting(name = "Kamera")
                     AppDestinations.KLEIDERSCHRANK -> Kleiderschrank()
                 }
