@@ -111,10 +111,6 @@ spotless {
  */"""
         )
     }
-    kotlinGradle {
-        target("*.gradle.kts") // default target for kotlinGradle
-        ktlint()
-    }
 }
 
 tasks.named("preBuild") {
