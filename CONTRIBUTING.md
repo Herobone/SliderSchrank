@@ -16,6 +16,8 @@ To install the pre-commit hook, run the following command in your terminal:
 ./gradlew installGitHook
 ```
 
+Spotless enforces the Android Kotlin Style guide, which can be found [here](https://developer.android.com/kotlin/style-guide)
+
 ## Branches
 
 * follow the scheme: `(feature|bugfix|hotfix|release|documentation)/what_are_you_doing`

@@ -11,6 +11,11 @@ tasks.register<Exec>("installGitHook") {
     description = "Installs the git hook."
     commandLine("git", "config", "core.hooksPath", "hooks")
     doLast {
+        val preCommitFile = file("hooks/pre-commit")
+        if (preCommitFile.exists()) {
+            // This is a cross-platform way to make the hook executable
+            preCommitFile.setExecutable(true, false)
+        }
         println("Git hook installed successfully.")
     }
 }
