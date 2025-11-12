@@ -1,0 +1,4 @@
+#!/bin/sh
+
+./gradlew spotlessApply
+git diff --cached --name-only --diff-filter=ACM | xargs git add
