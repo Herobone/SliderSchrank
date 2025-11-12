@@ -27,20 +27,19 @@
  */
 package net.ottercloud.sliderschrank
 
-import androidx.compose.foundation.ExperimentalFoundationApi // <-- Import for Pager
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.pager.HorizontalPager // <-- Import for Pager
-import androidx.compose.foundation.pager.rememberPagerState // <-- Import for Pager
-import androidx.compose.foundation.rememberScrollState // <-- Import for Vertical Scroll
-import androidx.compose.foundation.verticalScroll // <-- Import for Vertical Scroll
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Lock
@@ -55,6 +54,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,16 +62,49 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 
+// Moved constant list outside the composable
+private val categoryOrder = listOf(
+    GarmentType.HEAD,
+    GarmentType.TOP,
+    GarmentType.BOTTOM,
+    GarmentType.FEET
+)
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
     val groupedGarments = remember { dummyGarments.groupBy { it.type } }
 
-    val categoryOrder = listOf(
-        GarmentType.HEAD,
-        GarmentType.TOP,
-        GarmentType.BOTTOM,
-        GarmentType.FEET
-    )
+    val scope = rememberCoroutineScope()
+
+    val pagerStates = categoryOrder.associateWith { category ->
+        val garmentsForCategory = groupedGarments[category].orEmpty()
+        rememberPagerState(pageCount = { garmentsForCategory.size })
+    }
+
+    var lockedGarmentIds by remember { mutableStateOf(emptySet<Int>()) }
+
+    val onLockClick: (Int) -> Unit = remember {
+        { garmentId ->
+            lockedGarmentIds = if (lockedGarmentIds.contains(garmentId)) {
+                lockedGarmentIds - garmentId
+            } else {
+                lockedGarmentIds + garmentId
+            }
+        }
+    }
+
+    val onShuffleClick: () -> Unit =
+        remember(scope, pagerStates, groupedGarments, lockedGarmentIds) {
+            {
+                performUiShuffle(
+                    scope = scope,
+                    pagerStates = pagerStates,
+                    groupedGarments = groupedGarments,
+                    lockedGarmentIds = lockedGarmentIds
+                )
+            }
+        }
 
     Column(
         modifier = modifier
@@ -88,7 +121,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         ) {
             Text("Dein Outfit", style = MaterialTheme.typography.titleLarge)
             Row {
-                IconButton(onClick = { /* TODO: Random Shuffle Action */ }) {
+                IconButton(onClick = onShuffleClick) {
                     Icon(Icons.Default.Shuffle, contentDescription = "Zufälliges Outfit")
                 }
                 IconButton(onClick = { /* TODO: Save as Favourite Action */ }) {
@@ -100,19 +133,31 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         // Garment sliders
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.SpaceEvenly,
+                .fillMaxHeight(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Iterate over the defined category order
             categoryOrder.forEach { category ->
-                // Get the list of garments for the current category
                 val garmentsForCategory = groupedGarments[category].orEmpty()
+                val pagerState = pagerStates[category]
+                val weight = when (category) {
+                    GarmentType.HEAD, GarmentType.FEET -> 0.2f // 20%
+                    else -> 0.3f // 30%
+                }
 
-                // Only display the slider if there are items in that category
-                if (garmentsForCategory.isNotEmpty()) {
-                    GarmentSlider(garments = garmentsForCategory)
+                if (garmentsForCategory.isNotEmpty() && pagerState != null) {
+                    val currentGarment = garmentsForCategory.getOrNull(pagerState.currentPage)
+                    val isCurrentItemLocked = currentGarment?.id in lockedGarmentIds
+
+                    GarmentSlider(
+                        garments = garmentsForCategory,
+                        pagerState = pagerState,
+                        isSwipeEnabled = !isCurrentItemLocked,
+                        lockedGarmentIds = lockedGarmentIds,
+                        onLockClick = onLockClick,
+                        modifier = Modifier
+                            .weight(weight)
+                            .fillMaxWidth()
+                    )
                 }
             }
         }
@@ -121,47 +166,72 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun GarmentSlider(garments: List<Garment>, modifier: Modifier = Modifier) {
-    // State for the horizontal pager
-    val pagerState = rememberPagerState(pageCount = { garments.size })
-
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        // This is the horizontal pager
+fun GarmentSlider(
+    garments: List<Garment>,
+    pagerState: PagerState,
+    isSwipeEnabled: Boolean,
+    lockedGarmentIds: Set<Int>,
+    onLockClick: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
         HorizontalPager(
             state = pagerState,
+            userScrollEnabled = isSwipeEnabled,
+            key = { page -> garments[page].id }, // <-- OPTIMIZED: Added stable key
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxHeight()
         ) { page ->
-            // The content for each page is a GarmentItem
-            // It's common to center the item in the pager's page
+            val garment = garments[page]
+
+            // <-- OPTIMIZED: Create a stable lambda for GarmentItem
+            val itemOnLockClick = remember(garment.id) {
+                { onLockClick(garment.id) }
+            }
+
             Box(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                GarmentItem(garment = garments[page])
+                GarmentItem(
+                    garment = garment,
+                    isLocked = lockedGarmentIds.contains(garment.id),
+                    onLockClick = itemOnLockClick // <-- OPTIMIZED: Pass stable lambda
+                )
             }
         }
     }
 }
 
 @Composable
-fun GarmentItem(garment: Garment, modifier: Modifier = Modifier) {
-    var isLocked by remember { mutableStateOf(false) }
+fun GarmentItem(
+    garment: Garment,
+    isLocked: Boolean,
+    onLockClick: () -> Unit, // <-- OPTIMIZED: Signature changed to parameterless lambda
+    modifier: Modifier = Modifier
+) {
+    val verticalPadding = when (garment.type) {
+        GarmentType.HEAD, GarmentType.FEET -> 32.dp
+        else -> 16.dp
+    }
 
     Box(
         modifier = modifier
-            .size(width = 250.dp, height = 150.dp) // Adjusted height slightly
+            .fillMaxSize()
+            .padding(horizontal = 48.dp, vertical = verticalPadding)
     ) {
-        // Placeholder for the garment image
         Card(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(garment.name) // <-- Display the garment's name
+                Text(garment.name)
             }
         }
-
-        // Lock Button
         IconButton(
-            onClick = { isLocked = !isLocked },
+            onClick = onLockClick, // <-- OPTIMIZED: Directly pass stable lambda
             modifier = Modifier.align(Alignment.TopEnd)
         ) {
             Icon(

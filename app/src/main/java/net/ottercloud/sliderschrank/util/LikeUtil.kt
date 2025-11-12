@@ -25,32 +25,8 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank
+package net.ottercloud.sliderschrank.util
 
-enum class GarmentType {
-    HEAD,
-    TOP, // For shirts, pullovers, jackets
-    BOTTOM, // For trousers, skirts
-    FEET
+fun hello() {
+    print("Placeholder")
 }
-
-data class Garment(val id: Int, val name: String, val type: GarmentType)
-
-val dummyGarments = listOf(
-    // Headwear (Slider 1)
-    Garment(1, "Beanie", GarmentType.HEAD),
-    Garment(2, "Cap", GarmentType.HEAD),
-
-    // Tops (Slider 2)
-    Garment(1000, "Blaues Shirt", GarmentType.TOP),
-    Garment(1001, "Roter Pullover", GarmentType.TOP),
-    Garment(1002, "Grüne Jacke", GarmentType.TOP),
-
-    // Bottoms (Slider 3)
-    Garment(2000, "Jeans", GarmentType.BOTTOM),
-    Garment(2001, "Schwarze Hose", GarmentType.BOTTOM),
-
-    // Footwear (Slider 4)
-    Garment(3000, "Sneaker", GarmentType.FEET),
-    Garment(3001, "Stiefel", GarmentType.FEET)
-)
