@@ -45,15 +45,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
-
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
@@ -112,9 +119,9 @@ fun HomeScreen(modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class) // <-- Required for HorizontalPager
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun GarmentSlider(modifier: Modifier = Modifier, garments: List<Garment>) { // <-- 'Garment' is from GarmentData.kt
+fun GarmentSlider(garments: List<Garment>, modifier: Modifier = Modifier) {
     // State for the horizontal pager
     val pagerState = rememberPagerState(pageCount = { garments.size })
 
@@ -138,7 +145,7 @@ fun GarmentSlider(modifier: Modifier = Modifier, garments: List<Garment>) { // <
 }
 
 @Composable
-fun GarmentItem(modifier: Modifier = Modifier) {
+fun GarmentItem(garment: Garment, modifier: Modifier = Modifier) {
     var isLocked by remember { mutableStateOf(false) }
 
     Box(
