@@ -31,12 +31,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.PagerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-/**
- * This is the new function that contains all the shuffle logic
- * previously in HomeScreen.
- *
- * It requires the UI states (scope, pagers, etc.) to be passed in.
- */
 @OptIn(ExperimentalFoundationApi::class)
 fun performUiShuffle(
     scope: CoroutineScope,

@@ -62,7 +62,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 
-// Moved constant list outside the composable
 private val categoryOrder = listOf(
     GarmentType.HEAD,
     GarmentType.TOP,
@@ -111,7 +110,6 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             .fillMaxSize()
             .statusBarsPadding()
     ) {
-        // Top action bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -182,14 +180,13 @@ fun GarmentSlider(
         HorizontalPager(
             state = pagerState,
             userScrollEnabled = isSwipeEnabled,
-            key = { page -> garments[page].id }, // <-- OPTIMIZED: Added stable key
+            key = { page -> garments[page].id },
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
         ) { page ->
             val garment = garments[page]
 
-            // <-- OPTIMIZED: Create a stable lambda for GarmentItem
             val itemOnLockClick = remember(garment.id) {
                 { onLockClick(garment.id) }
             }
@@ -201,7 +198,7 @@ fun GarmentSlider(
                 GarmentItem(
                     garment = garment,
                     isLocked = lockedGarmentIds.contains(garment.id),
-                    onLockClick = itemOnLockClick // <-- OPTIMIZED: Pass stable lambda
+                    onLockClick = itemOnLockClick
                 )
             }
         }
@@ -212,7 +209,7 @@ fun GarmentSlider(
 fun GarmentItem(
     garment: Garment,
     isLocked: Boolean,
-    onLockClick: () -> Unit, // <-- OPTIMIZED: Signature changed to parameterless lambda
+    onLockClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val verticalPadding = when (garment.type) {
@@ -231,7 +228,7 @@ fun GarmentItem(
             }
         }
         IconButton(
-            onClick = onLockClick, // <-- OPTIMIZED: Directly pass stable lambda
+            onClick = onLockClick,
             modifier = Modifier.align(Alignment.TopEnd)
         ) {
             Icon(
