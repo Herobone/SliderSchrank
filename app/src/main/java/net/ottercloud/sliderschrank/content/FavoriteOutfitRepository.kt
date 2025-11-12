@@ -27,35 +27,39 @@
  */
 package net.ottercloud.sliderschrank
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.pager.PagerState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
 
-@OptIn(ExperimentalFoundationApi::class)
-fun performUiShuffle(
-    scope: CoroutineScope,
-    pagerStates: Map<GarmentType, PagerState>,
-    groupedGarments: Map<GarmentType, List<Garment>>,
-    lockedGarmentIds: Set<Int>
-) {
-    scope.launch {
-        pagerStates.forEach { (category, pagerState) ->
-            val garments = groupedGarments[category].orEmpty()
+/**
+ * Ein temporärer, speicherinterner "Speicher" für favorisierte Outfits.
+ * Dies ist ein Singleton-Objekt, sodass die Liste global zugänglich ist.
+ *
+ * Es verwendet `mutableStateListOf`, damit Composables, die diese Liste
+ * beobachten, bei Änderungen automatisch neu komponiert werden.
+ *
+ * Ein "Outfit" wird als ein Set von Kleidungsstück-IDs (Set<Int>) gespeichert.
+ */
+object FavoriteOutfitRepository {
 
-            if (garments.isNotEmpty() && pagerState.pageCount > 1) {
-                val currentGarment = garments[pagerState.currentPage]
+    /**
+     * Die Liste aller gespeicherten (favorisierten) Outfits.
+     * Jedes Element in dieser Liste ist ein Set von Garment-IDs.
+     */
+    val favoriteOutfits = mutableStateListOf<Set<Int>>()
 
-                if (currentGarment.id !in lockedGarmentIds) {
-                    var newPage = pagerState.currentPage
-
-                    while (newPage == pagerState.currentPage) {
-                        newPage = (0 until pagerState.pageCount).random()
-                    }
-
-                    pagerState.animateScrollToPage(newPage)
-                }
-            }
+    fun addFavorite(outfitIds: Set<Int>) {
+        if (!favoriteOutfits.contains(outfitIds)) {
+            favoriteOutfits.add(outfitIds)
+            Log.d("FavoriteOutfitRepo", "Outfit hinzugefügt: $outfitIds")
         }
     }
+
+    fun removeFavorite(outfitIds: Set<Int>) {
+        val removed = favoriteOutfits.remove(outfitIds)
+        if (removed) {
+            Log.d("FavoriteOutfitRepo", "Outfit entfernt: $outfitIds")
+        }
+    }
+
+    fun isFavorite(outfitIds: Set<Int>): Boolean = favoriteOutfits.contains(outfitIds)
 }

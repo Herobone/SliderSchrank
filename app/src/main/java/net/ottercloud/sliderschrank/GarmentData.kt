@@ -27,30 +27,64 @@
  */
 package net.ottercloud.sliderschrank
 
+import androidx.annotation.DrawableRes
+import java.util.Locale
+
 enum class GarmentType {
     HEAD,
-    TOP, // For shirts, pullovers, jackets
-    BOTTOM, // For trousers, skirts
+    TOP,
+    BOTTOM,
     FEET
 }
 
-data class Garment(val id: Int, val name: String, val type: GarmentType)
-
-val dummyGarments = listOf(
-    // Headwear (Slider 1)
-    Garment(1, "Beanie", GarmentType.HEAD),
-    Garment(2, "Cap", GarmentType.HEAD),
-
-    // Tops (Slider 2)
-    Garment(1000, "Blaues Shirt", GarmentType.TOP),
-    Garment(1001, "Roter Pullover", GarmentType.TOP),
-    Garment(1002, "Grüne Jacke", GarmentType.TOP),
-
-    // Bottoms (Slider 3)
-    Garment(2000, "Jeans", GarmentType.BOTTOM),
-    Garment(2001, "Schwarze Hose", GarmentType.BOTTOM),
-
-    // Footwear (Slider 4)
-    Garment(3000, "Sneaker", GarmentType.FEET),
-    Garment(3001, "Stiefel", GarmentType.FEET)
+data class Garment(
+    val id: Int,
+    val name: String,
+    val type: GarmentType,
+    @param:DrawableRes val imageResId: Int
 )
+
+private fun getGarmentTypeFromId(id: Int): GarmentType {
+    val idString = id.toString()
+
+    return when {
+        idString.startsWith("1") -> GarmentType.HEAD
+        idString.startsWith("2") -> GarmentType.TOP
+        idString.startsWith("3") -> GarmentType.BOTTOM
+        idString.startsWith("4") -> GarmentType.FEET
+        else -> GarmentType.HEAD
+    }
+}
+
+private fun loadGarmentsFromDrawables(): List<Garment> {
+    val garments = mutableListOf<Garment>()
+    val drawableFields = R.drawable::class.java.fields
+
+    for (field in drawableFields) {
+        val resName = field.name
+
+        if (resName.startsWith("img_")) {
+            try {
+                val idString = resName.removePrefix("img_")
+                val id = idString.toInt()
+
+                @DrawableRes val resId = field.getInt(null)
+
+                val type = getGarmentTypeFromId(id)
+
+                val name = "${
+                    type.name.lowercase(Locale.ROOT).replaceFirstChar {
+                        it.titlecase(Locale.ROOT)
+                    }
+                } $id"
+
+                garments.add(Garment(id, name, type, resId))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    return garments.sortedBy { it.id }
+}
+
+val dummyGarments: List<Garment> = loadGarmentsFromDrawables()

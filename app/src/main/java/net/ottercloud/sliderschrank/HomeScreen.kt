@@ -28,6 +28,8 @@
 package net.ottercloud.sliderschrank
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +43,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
@@ -51,6 +54,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +62,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
@@ -83,6 +89,16 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 
     var lockedGarmentIds by remember { mutableStateOf(emptySet<Int>()) }
 
+    val currentOutfitIds by remember {
+        derivedStateOf {
+            pagerStates.mapNotNull { (category, pagerState) ->
+                groupedGarments[category]?.getOrNull(pagerState.currentPage)?.id
+            }.toSet()
+        }
+    }
+
+    val isCurrentOutfitSaved = FavoriteOutfitRepository.isFavorite(currentOutfitIds)
+
     val onLockClick: (Int) -> Unit = remember {
         { garmentId ->
             lockedGarmentIds = if (lockedGarmentIds.contains(garmentId)) {
@@ -90,6 +106,13 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             } else {
                 lockedGarmentIds + garmentId
             }
+        }
+    }
+
+    val onGarmentClick: (GarmentType) -> Unit = remember {
+        { category ->
+            // TODO: Layer-Auswahlseite implementiert
+            println("Kategorie $category wurde geklickt.")
         }
     }
 
@@ -104,6 +127,16 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 )
             }
         }
+
+    val onFavoriteClick: () -> Unit = remember(isCurrentOutfitSaved, currentOutfitIds) {
+        {
+            if (isCurrentOutfitSaved) {
+                FavoriteOutfitRepository.removeFavorite(currentOutfitIds)
+            } else {
+                FavoriteOutfitRepository.addFavorite(currentOutfitIds)
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -122,13 +155,24 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 IconButton(onClick = onShuffleClick) {
                     Icon(Icons.Default.Shuffle, contentDescription = "Zufälliges Outfit")
                 }
-                IconButton(onClick = { /* TODO: Save as Favourite Action */ }) {
-                    Icon(Icons.Default.FavoriteBorder, contentDescription = "Outfit speichern")
+                IconButton(onClick = onFavoriteClick) {
+                    Icon(
+                        imageVector = if (isCurrentOutfitSaved) {
+                            Icons.Default.Favorite
+                        } else {
+                            Icons.Default.FavoriteBorder
+                        },
+                        contentDescription = "Outfit speichern",
+                        tint = if (isCurrentOutfitSaved) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
                 }
             }
         }
 
-        // Garment sliders
         Column(
             modifier = Modifier
                 .fillMaxHeight(),
@@ -138,8 +182,8 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 val garmentsForCategory = groupedGarments[category].orEmpty()
                 val pagerState = pagerStates[category]
                 val weight = when (category) {
-                    GarmentType.HEAD, GarmentType.FEET -> 0.2f // 20%
-                    else -> 0.3f // 30%
+                    GarmentType.HEAD, GarmentType.FEET -> 0.2f
+                    else -> 0.3f
                 }
 
                 if (garmentsForCategory.isNotEmpty() && pagerState != null) {
@@ -152,6 +196,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                         isSwipeEnabled = !isCurrentItemLocked,
                         lockedGarmentIds = lockedGarmentIds,
                         onLockClick = onLockClick,
+                        onGarmentClick = onGarmentClick,
                         modifier = Modifier
                             .weight(weight)
                             .fillMaxWidth()
@@ -170,6 +215,7 @@ fun GarmentSlider(
     isSwipeEnabled: Boolean,
     lockedGarmentIds: Set<Int>,
     onLockClick: (Int) -> Unit,
+    onGarmentClick: (GarmentType) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -191,6 +237,10 @@ fun GarmentSlider(
                 { onLockClick(garment.id) }
             }
 
+            val itemOnGarmentClick = remember(garment.type) {
+                { onGarmentClick(garment.type) }
+            }
+
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -198,7 +248,8 @@ fun GarmentSlider(
                 GarmentItem(
                     garment = garment,
                     isLocked = lockedGarmentIds.contains(garment.id),
-                    onLockClick = itemOnLockClick
+                    onLockClick = itemOnLockClick,
+                    onGarmentClick = itemOnGarmentClick
                 )
             }
         }
@@ -210,22 +261,27 @@ fun GarmentItem(
     garment: Garment,
     isLocked: Boolean,
     onLockClick: () -> Unit,
+    onGarmentClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val verticalPadding = when (garment.type) {
-        GarmentType.HEAD, GarmentType.FEET -> 32.dp
-        else -> 16.dp
-    }
-
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 48.dp, vertical = verticalPadding)
+            .padding(horizontal = 48.dp)
     ) {
-        Card(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(garment.name)
-            }
+        Card(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(onClick = onGarmentClick)
+        ) {
+            Image(
+                painter = painterResource(id = garment.imageResId),
+                contentDescription = garment.name,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                contentScale = ContentScale.Fit
+            )
         }
         IconButton(
             onClick = onLockClick,
