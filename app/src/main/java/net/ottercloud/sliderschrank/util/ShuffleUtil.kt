@@ -31,19 +31,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.PagerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-
-/**
- * Creates a Set of random garment IDs, one for each type.
- * Note: This function is not currently used by performUiShuffle.
- */
-fun shuffleRandomOutfit(): Set<Int> {
-    return dummyGarments
-        .groupBy { it.type } // Creates a Map<GarmentType, List<Garment>>
-        .values // Gets a Collection<List<Garment>> (one list for each type)
-        .map { garmentList -> garmentList.random().id } // Picks Item
-        .toSet() // Converts the resulting List<Int> to a Set<Int>
-}
-
 /**
  * This is the new function that contains all the shuffle logic
  * previously in HomeScreen.
@@ -64,12 +51,9 @@ fun performUiShuffle(
             if (garments.isNotEmpty() && pagerState.pageCount > 0) {
                 val currentGarment = garments[pagerState.currentPage]
 
-                // Only shuffle if the item is NOT locked
                 if (currentGarment.id !in lockedGarmentIds) {
-                    // Pick any random page (0 until pageCount).
                     val newPage = (0 until pagerState.pageCount).random()
 
-                    // Animate to that page.
                     pagerState.animateScrollToPage(newPage)
                 }
             }
