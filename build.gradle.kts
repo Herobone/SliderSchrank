@@ -1,3 +1,5 @@
+import java.util.Locale
+
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
     alias(libs.plugins.android.application) apply false
@@ -6,15 +8,21 @@ plugins {
     alias(libs.plugins.spotless) apply false
 }
 
-tasks.register<Exec>("installGitHook") {
+tasks.register("installGitHook") {
     group = "verification"
     description = "Installs the git hook."
-    commandLine("git", "config", "core.hooksPath", "hooks")
     doLast {
-        val preCommitFile = file("hooks/pre-commit")
-        if (preCommitFile.exists()) {
-            // This is a cross-platform way to make the hook executable
-            preCommitFile.setExecutable(true, false)
+        val osName = System.getProperty("os.name")
+        val isWindows = osName.lowercase(Locale.getDefault()).contains("windows")
+        val hookFile = if (isWindows) file("hooks/pre-commit.bat") else file("hooks/pre-commit")
+        val gitHookDir = file(".git/hooks")
+        if (!gitHookDir.exists()) {
+            gitHookDir.mkdirs()
+        }
+        val gitHook = file("${gitHookDir.path}/pre-commit")
+        hookFile.copyTo(gitHook, overwrite = true)
+        if (!isWindows) {
+            gitHook.setExecutable(true, false)
         }
         println("Git hook installed successfully.")
     }
