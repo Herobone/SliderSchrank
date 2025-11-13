@@ -77,102 +77,87 @@ private val categoryOrder = listOf(
 )
 
 @OptIn(ExperimentalFoundationApi::class)
+private class HomeScreenState(
+    val groupedGarments: Map<GarmentType, List<Garment>>,
+    val pagerStates: Map<GarmentType, PagerState>
+) {
+    var lockedGarmentIds by mutableStateOf(emptySet<Int>())
+        private set
+    val currentOutfitIds by derivedStateOf {
+        pagerStates.mapNotNull { (category, pagerState) ->
+            groupedGarments[category]?.getOrNull(pagerState.currentPage)?.id
+        }.toSet()
+    }
+
+    val isCurrentOutfitSaved by derivedStateOf {
+        LikeUtil.isFavorite(currentOutfitIds)
+    }
+
+    fun onLockClick(garmentId: Int) {
+        lockedGarmentIds = if (lockedGarmentIds.contains(garmentId)) {
+            lockedGarmentIds - garmentId
+        } else {
+            lockedGarmentIds + garmentId
+        }
+    }
+
+    fun onGarmentClick(category: GarmentType) {
+        println("Kategorie $category wurde geklickt.")
+    }
+
+    fun onFavoriteClick() {
+        LikeUtil.toggleFavorite(currentOutfitIds)
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
-    val groupedGarments = remember { dummyGarments.groupBy { it.type } }
-
-    val scope = rememberCoroutineScope()
-
+private fun rememberHomeScreenState(
+    groupedGarments: Map<GarmentType, List<Garment>> =
+        remember { dummyGarments.groupBy { it.type } }
+): HomeScreenState {
     val pagerStates = categoryOrder.associateWith { category ->
         val garmentsForCategory = groupedGarments[category].orEmpty()
         rememberPagerState(pageCount = { garmentsForCategory.size })
     }
 
-    var lockedGarmentIds by remember { mutableStateOf(emptySet<Int>()) }
-
-    val currentOutfitIds by remember {
-        derivedStateOf {
-            pagerStates.mapNotNull { (category, pagerState) ->
-                groupedGarments[category]?.getOrNull(pagerState.currentPage)?.id
-            }.toSet()
-        }
+    return remember(groupedGarments, pagerStates) {
+        HomeScreenState(
+            groupedGarments = groupedGarments,
+            pagerStates = pagerStates
+        )
     }
+}
 
-    val isCurrentOutfitSaved = LikeUtil.isFavorite(currentOutfitIds)
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun HomeScreen(modifier: Modifier = Modifier) {
+    val state = rememberHomeScreenState()
 
-    val onLockClick: (Int) -> Unit = remember {
-        { garmentId ->
-            lockedGarmentIds = if (lockedGarmentIds.contains(garmentId)) {
-                lockedGarmentIds - garmentId
-            } else {
-                lockedGarmentIds + garmentId
-            }
-        }
-    }
-
-    val onGarmentClick: (GarmentType) -> Unit = remember {
-        { category ->
-            // TODO: Layer-Auswahlseite implementiert
-            println("Kategorie $category wurde geklickt.")
-        }
-    }
+    val scope = rememberCoroutineScope()
 
     val onShuffleClick: () -> Unit =
-        remember(scope, pagerStates, groupedGarments, lockedGarmentIds) {
+        remember(scope, state) {
             {
                 performUiShuffle(
                     scope = scope,
-                    pagerStates = pagerStates,
-                    groupedGarments = groupedGarments,
-                    lockedGarmentIds = lockedGarmentIds
+                    pagerStates = state.pagerStates,
+                    groupedGarments = state.groupedGarments,
+                    lockedGarmentIds = state.lockedGarmentIds
                 )
             }
         }
-
-    val onFavoriteClick: () -> Unit = remember(isCurrentOutfitSaved, currentOutfitIds) {
-        {
-            if (isCurrentOutfitSaved) {
-                LikeUtil.removeFavorite(currentOutfitIds)
-            } else {
-                LikeUtil.addFavorite(currentOutfitIds)
-            }
-        }
-    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .statusBarsPadding()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("Dein Outfit", style = MaterialTheme.typography.titleLarge)
-            Row {
-                IconButton(onClick = onShuffleClick) {
-                    Icon(Icons.Default.Shuffle, contentDescription = "Zufälliges Outfit")
-                }
-                IconButton(onClick = onFavoriteClick) {
-                    Icon(
-                        imageVector = if (isCurrentOutfitSaved) {
-                            Icons.Default.Favorite
-                        } else {
-                            Icons.Default.FavoriteBorder
-                        },
-                        contentDescription = "Outfit speichern",
-                        tint = if (isCurrentOutfitSaved) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                }
-            }
-        }
+        HomeScreenTopBar(
+            isOutfitSaved = state.isCurrentOutfitSaved,
+            onShuffleClick = onShuffleClick,
+            onFavoriteClick = state::onFavoriteClick
+        )
 
         Column(
             modifier = Modifier
@@ -180,29 +165,67 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             categoryOrder.forEach { category ->
-                val garmentsForCategory = groupedGarments[category].orEmpty()
-                val pagerState = pagerStates[category]
+                val garmentsForCategory = state.groupedGarments[category].orEmpty()
+                val pagerState = state.pagerStates[category]
                 val weight = when (category) {
                     GarmentType.HEAD, GarmentType.FEET -> 0.2f
                     else -> 0.3f
                 }
 
                 if (garmentsForCategory.isNotEmpty() && pagerState != null) {
-                    val currentGarment = garmentsForCategory.getOrNull(pagerState.currentPage)
-                    val isCurrentItemLocked = currentGarment?.id in lockedGarmentIds
+                    val currentGarment =
+                        garmentsForCategory.getOrNull(pagerState.currentPage)
+                    val isCurrentItemLocked = currentGarment?.id in state.lockedGarmentIds
 
                     GarmentSlider(
                         garments = garmentsForCategory,
                         pagerState = pagerState,
                         isSwipeEnabled = !isCurrentItemLocked,
-                        lockedGarmentIds = lockedGarmentIds,
-                        onLockClick = onLockClick,
-                        onGarmentClick = onGarmentClick,
+                        lockedGarmentIds = state.lockedGarmentIds,
+                        onLockClick = state::onLockClick,
+                        onGarmentClick = state::onGarmentClick,
                         modifier = Modifier
                             .weight(weight)
                             .fillMaxWidth()
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeScreenTopBar(
+    isOutfitSaved: Boolean,
+    onShuffleClick: () -> Unit,
+    onFavoriteClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text("Dein Outfit", style = MaterialTheme.typography.titleLarge)
+        Row {
+            IconButton(onClick = onShuffleClick) {
+                Icon(Icons.Default.Shuffle, contentDescription = "Zufälliges Outfit")
+            }
+            IconButton(onClick = onFavoriteClick) {
+                Icon(
+                    imageVector = if (isOutfitSaved) {
+                        Icons.Default.Favorite
+                    } else {
+                        Icons.Default.FavoriteBorder
+                    },
+                    contentDescription = "Outfit speichern",
+                    tint = if (isOutfitSaved) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
             }
         }
     }

@@ -30,36 +30,31 @@ package net.ottercloud.sliderschrank.util
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 
-/**
- * Ein temporärer, speicherinterner "Speicher" für favorisierte Outfits.
- * Dies ist ein Singleton-Objekt, sodass die Liste global zugänglich ist.
- *
- * Es verwendet `mutableStateListOf`, damit Composables, die diese Liste
- * beobachten, bei Änderungen automatisch neu komponiert werden.
- *
- * Ein "Outfit" wird als ein Set von Kleidungsstück-IDs (Set<Int>) gespeichert.
- */
 object LikeUtil {
 
-    /**
-     * Die Liste aller gespeicherten (favorisierten) Outfits.
-     * Jedes Element in dieser Liste ist ein Set von Garment-IDs.
-     */
     val favoriteOutfits = mutableStateListOf<Set<Int>>()
 
     fun addFavorite(outfitIds: Set<Int>) {
         if (!favoriteOutfits.contains(outfitIds)) {
             favoriteOutfits.add(outfitIds)
-            Log.d("FavoriteOutfitRepo", "Outfit hinzugefügt: $outfitIds")
+            Log.d("LikeUtil", "Outfit hinzugefügt: $outfitIds")
         }
     }
 
     fun removeFavorite(outfitIds: Set<Int>) {
         val removed = favoriteOutfits.remove(outfitIds)
         if (removed) {
-            Log.d("FavoriteOutfitRepo", "Outfit entfernt: $outfitIds")
+            Log.d("LikeUtil", "Outfit entfernt: $outfitIds")
         }
     }
 
     fun isFavorite(outfitIds: Set<Int>): Boolean = favoriteOutfits.contains(outfitIds)
+
+    fun toggleFavorite(outfitIds: Set<Int>) {
+        if (isFavorite(outfitIds)) {
+            removeFavorite(outfitIds)
+        } else {
+            addFavorite(outfitIds)
+        }
+    }
 }
