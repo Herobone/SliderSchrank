@@ -67,6 +67,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import net.ottercloud.sliderschrank.util.LikeUtil
 
 private val categoryOrder = listOf(
     GarmentType.HEAD,
@@ -97,7 +98,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         }
     }
 
-    val isCurrentOutfitSaved = FavoriteOutfitRepository.isFavorite(currentOutfitIds)
+    val isCurrentOutfitSaved = LikeUtil.isFavorite(currentOutfitIds)
 
     val onLockClick: (Int) -> Unit = remember {
         { garmentId ->
@@ -131,9 +132,9 @@ fun HomeScreen(modifier: Modifier = Modifier) {
     val onFavoriteClick: () -> Unit = remember(isCurrentOutfitSaved, currentOutfitIds) {
         {
             if (isCurrentOutfitSaved) {
-                FavoriteOutfitRepository.removeFavorite(currentOutfitIds)
+                LikeUtil.removeFavorite(currentOutfitIds)
             } else {
-                FavoriteOutfitRepository.addFavorite(currentOutfitIds)
+                LikeUtil.addFavorite(currentOutfitIds)
             }
         }
     }
