@@ -90,6 +90,8 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 
     var lockedGarmentIds by remember { mutableStateOf(emptySet<Int>()) }
 
+    var isLayerScreenVisible by remember { mutableStateOf(false) }
+
     val currentOutfitIds by remember {
         derivedStateOf {
             pagerStates.mapNotNull { (category, pagerState) ->
@@ -112,8 +114,8 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 
     val onGarmentClick: (GarmentType) -> Unit = remember {
         { category ->
-            // TODO: Layer-Auswahlseite implementiert
             println("Kategorie $category wurde geklickt.")
+            isLayerScreenVisible = true
         }
     }
 
@@ -139,71 +141,81 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         }
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .statusBarsPadding()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Text("Dein Outfit", style = MaterialTheme.typography.titleLarge)
-            Row {
-                IconButton(onClick = onShuffleClick) {
-                    Icon(Icons.Default.Shuffle, contentDescription = "Zufälliges Outfit")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Dein Outfit", style = MaterialTheme.typography.titleLarge)
+                Row {
+                    IconButton(onClick = onShuffleClick) {
+                        Icon(Icons.Default.Shuffle, contentDescription = "Zufälliges Outfit")
+                    }
+                    IconButton(onClick = onFavoriteClick) {
+                        Icon(
+                            imageVector = if (isCurrentOutfitSaved) {
+                                Icons.Default.Favorite
+                            } else {
+                                Icons.Default.FavoriteBorder
+                            },
+                            contentDescription = "Outfit speichern",
+                            tint = if (isCurrentOutfitSaved) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
                 }
-                IconButton(onClick = onFavoriteClick) {
-                    Icon(
-                        imageVector = if (isCurrentOutfitSaved) {
-                            Icons.Default.Favorite
-                        } else {
-                            Icons.Default.FavoriteBorder
-                        },
-                        contentDescription = "Outfit speichern",
-                        tint = if (isCurrentOutfitSaved) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                categoryOrder.forEach { category ->
+                    val garmentsForCategory = groupedGarments[category].orEmpty()
+                    val pagerState = pagerStates[category]
+                    val weight = when (category) {
+                        GarmentType.HEAD, GarmentType.FEET -> 0.2f
+                        else -> 0.3f
+                    }
+
+                    if (garmentsForCategory.isNotEmpty() && pagerState != null) {
+                        val currentGarment = garmentsForCategory.getOrNull(pagerState.currentPage)
+                        val isCurrentItemLocked = currentGarment?.id in lockedGarmentIds
+
+                        GarmentSlider(
+                            garments = garmentsForCategory,
+                            pagerState = pagerState,
+                            isSwipeEnabled = !isCurrentItemLocked,
+                            lockedGarmentIds = lockedGarmentIds,
+                            onLockClick = onLockClick,
+                            onGarmentClick = onGarmentClick, // <-- NEU: Handler übergeben
+                            modifier = Modifier
+                                .weight(weight)
+                                .fillMaxWidth()
+                        )
+                    }
                 }
             }
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxHeight(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            categoryOrder.forEach { category ->
-                val garmentsForCategory = groupedGarments[category].orEmpty()
-                val pagerState = pagerStates[category]
-                val weight = when (category) {
-                    GarmentType.HEAD, GarmentType.FEET -> 0.2f
-                    else -> 0.3f
-                }
-
-                if (garmentsForCategory.isNotEmpty() && pagerState != null) {
-                    val currentGarment = garmentsForCategory.getOrNull(pagerState.currentPage)
-                    val isCurrentItemLocked = currentGarment?.id in lockedGarmentIds
-
-                    GarmentSlider(
-                        garments = garmentsForCategory,
-                        pagerState = pagerState,
-                        isSwipeEnabled = !isCurrentItemLocked,
-                        lockedGarmentIds = lockedGarmentIds,
-                        onLockClick = onLockClick,
-                        onGarmentClick = onGarmentClick,
-                        modifier = Modifier
-                            .weight(weight)
-                            .fillMaxWidth()
-                    )
-                }
-            }
+        if (isLayerScreenVisible) {
+            LayerScreen(
+                onDismissRequest = { isLayerScreenVisible = false }
+            )
         }
     }
 }
