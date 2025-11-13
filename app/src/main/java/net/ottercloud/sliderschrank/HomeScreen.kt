@@ -93,6 +93,8 @@ private class HomeScreenState(
         LikeUtil.isFavorite(currentOutfitIds)
     }
 
+    var isLayerScreenVisible by mutableStateOf(false)
+
     fun onLockClick(garmentId: Int) {
         lockedGarmentIds = if (lockedGarmentIds.contains(garmentId)) {
             lockedGarmentIds - garmentId
@@ -103,6 +105,7 @@ private class HomeScreenState(
 
     fun onGarmentClick(category: GarmentType) {
         println("Kategorie $category wurde geklickt.")
+        isLayerScreenVisible = true
     }
 
     fun onFavoriteClick() {
@@ -148,48 +151,55 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             }
         }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .statusBarsPadding()
     ) {
-        HomeScreenTopBar(
-            isOutfitSaved = state.isCurrentOutfitSaved,
-            onShuffleClick = onShuffleClick,
-            onFavoriteClick = state::onFavoriteClick
-        )
+        Column(modifier = Modifier.fillMaxSize()) {
+            HomeScreenTopBar(
+                isOutfitSaved = state.isCurrentOutfitSaved,
+                onShuffleClick = onShuffleClick,
+                onFavoriteClick = state::onFavoriteClick
+            )
 
-        Column(
-            modifier = Modifier
-                .fillMaxHeight(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            categoryOrder.forEach { category ->
-                val garmentsForCategory = state.groupedGarments[category].orEmpty()
-                val pagerState = state.pagerStates[category]
-                val weight = when (category) {
-                    GarmentType.HEAD, GarmentType.FEET -> 0.2f
-                    else -> 0.3f
-                }
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                categoryOrder.forEach { category ->
+                    val garmentsForCategory = state.groupedGarments[category].orEmpty()
+                    val pagerState = state.pagerStates[category]
+                    val weight = when (category) {
+                        GarmentType.HEAD, GarmentType.FEET -> 0.2f
+                        else -> 0.3f
+                    }
 
-                if (garmentsForCategory.isNotEmpty() && pagerState != null) {
-                    val currentGarment =
-                        garmentsForCategory.getOrNull(pagerState.currentPage)
-                    val isCurrentItemLocked = currentGarment?.id in state.lockedGarmentIds
+                    if (garmentsForCategory.isNotEmpty() && pagerState != null) {
+                        val currentGarment =
+                            garmentsForCategory.getOrNull(pagerState.currentPage)
+                        val isCurrentItemLocked = currentGarment?.id in state.lockedGarmentIds
 
-                    GarmentSlider(
-                        garments = garmentsForCategory,
-                        pagerState = pagerState,
-                        isSwipeEnabled = !isCurrentItemLocked,
-                        lockedGarmentIds = state.lockedGarmentIds,
-                        onLockClick = state::onLockClick,
-                        onGarmentClick = state::onGarmentClick,
-                        modifier = Modifier
-                            .weight(weight)
-                            .fillMaxWidth()
-                    )
+                        GarmentSlider(
+                            garments = garmentsForCategory,
+                            pagerState = pagerState,
+                            isSwipeEnabled = !isCurrentItemLocked,
+                            lockedGarmentIds = state.lockedGarmentIds,
+                            onLockClick = state::onLockClick,
+                            onGarmentClick = state::onGarmentClick,
+                            modifier = Modifier
+                                .weight(weight)
+                                .fillMaxWidth()
+                        )
+                    }
                 }
             }
+        }
+        if (state.isLayerScreenVisible) {
+            LayerScreen(
+                onDismissRequest = { state.isLayerScreenVisible = false }
+            )
         }
     }
 }
