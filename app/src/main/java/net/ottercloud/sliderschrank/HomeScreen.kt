@@ -291,7 +291,7 @@ fun GarmentItem(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 48.dp)
+            .padding(horizontal = 24.dp, vertical = 8.dp)
     ) {
         Card(
             modifier = Modifier
@@ -301,9 +301,7 @@ fun GarmentItem(
             Image(
                 painter = painterResource(id = garment.imageResId),
                 contentDescription = garment.name,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp),
+                modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit
             )
         }
