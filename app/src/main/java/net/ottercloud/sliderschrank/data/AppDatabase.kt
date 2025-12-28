@@ -36,7 +36,14 @@ import net.ottercloud.sliderschrank.data.dao.CategoryDao
 import net.ottercloud.sliderschrank.data.dao.OutfitDao
 import net.ottercloud.sliderschrank.data.dao.PieceDao
 import net.ottercloud.sliderschrank.data.dao.TagDao
-import net.ottercloud.sliderschrank.data.model.*
+import net.ottercloud.sliderschrank.data.model.Category
+import net.ottercloud.sliderschrank.data.model.Converters
+import net.ottercloud.sliderschrank.data.model.Outfit
+import net.ottercloud.sliderschrank.data.model.OutfitPieceCrossRef
+import net.ottercloud.sliderschrank.data.model.OutfitTagCrossRef
+import net.ottercloud.sliderschrank.data.model.Piece
+import net.ottercloud.sliderschrank.data.model.PieceTagCrossRef
+import net.ottercloud.sliderschrank.data.model.Tag
 
 @Database(
     entities = [
@@ -60,18 +67,16 @@ abstract class AppDatabase : RoomDatabase() {
 
     companion object {
         @Volatile
-        private var INSTANCE: AppDatabase? = null
+        private var instance: AppDatabase? = null
 
-        fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "sliderschrank_database"
-                ).build()
-                INSTANCE = instance
-                instance
-            }
+        fun getDatabase(context: Context): AppDatabase = instance ?: synchronized(this) {
+            val newInstance = Room.databaseBuilder(
+                context.applicationContext,
+                AppDatabase::class.java,
+                "sliderschrank_database"
+            ).build()
+            instance = newInstance
+            newInstance
         }
     }
 }
