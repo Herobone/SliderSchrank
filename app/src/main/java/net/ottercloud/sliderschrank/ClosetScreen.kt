@@ -27,22 +27,78 @@
  */
 package net.ottercloud.sliderschrank
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import net.ottercloud.sliderschrank.util.SettingsManager
 
 @Composable
 fun Kleiderschrank(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Willkommen im Kleiderschrank!")
+    val context = LocalContext.current
+    val settingsManager = remember { SettingsManager(context) }
+    val background by settingsManager.background.collectAsState(initial = "Kork")
+
+    Box(modifier = modifier.fillMaxSize()) {
+        when (background) {
+            "Kork" -> {
+                Image(
+                    painter = painterResource(id = R.drawable.kork),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            "Grau" -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Gray)
+                )
+            }
+
+            "Weiß" -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White)
+                )
+            }
+
+            "Karo" -> {
+                CheckedBackground(modifier = Modifier.fillMaxSize())
+            }
+
+            else -> {
+                Image(
+                    painter = painterResource(id = R.drawable.kork),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Willkommen im Kleiderschrank!")
+        }
     }
 }
 

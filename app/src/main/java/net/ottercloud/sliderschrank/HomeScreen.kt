@@ -27,122 +27,85 @@
  */
 package net.ottercloud.sliderschrank
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import net.ottercloud.sliderschrank.util.SettingsManager
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding() // Add padding for the system status bar
-    ) {
-        // Top action bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("Dein Outfit", style = MaterialTheme.typography.titleLarge)
-            Row {
-                IconButton(onClick = { /* TODO: Random Shuffle Action */ }) {
-                    Icon(Icons.Default.Shuffle, contentDescription = "Zufälliges Outfit")
-                }
-                IconButton(onClick = { /* TODO: Save as Favourite Action */ }) {
-                    Icon(Icons.Default.FavoriteBorder, contentDescription = "Outfit speichern")
-                }
+    val context = LocalContext.current
+    val settingsManager = remember { SettingsManager(context) }
+    val background by settingsManager.background.collectAsState(initial = "Kork")
+
+    rememberCoroutineScope()
+
+    var lockedGarmentIds by remember { mutableStateOf(emptySet<Int>()) }
+
+    remember {
+        { garmentId ->
+            lockedGarmentIds = if (lockedGarmentIds.contains(garmentId)) {
+                lockedGarmentIds - garmentId
+            } else {
+                lockedGarmentIds + garmentId
             }
         }
-
-        // Garment sliders
-        Column(
-            modifier = Modifier
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceEvenly,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            GarmentSlider()
-            GarmentSlider()
-            GarmentSlider()
-            GarmentSlider()
-        }
     }
-}
 
-@Composable
-fun GarmentSlider(modifier: Modifier = Modifier) {
-    // This will be a horizontal pager later
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        GarmentItem()
-    }
-}
+    Box(modifier = modifier.fillMaxSize()) {
+        when (background) {
+            "Kork" -> {
+                Image(
+                    painter = painterResource(id = R.drawable.kork),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
 
-@Composable
-fun GarmentItem(modifier: Modifier = Modifier) {
-    var isLocked by remember { mutableStateOf(false) }
+            "Grau" -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Gray)
+                )
+            }
 
-    Box(
-        modifier = modifier
-            .size(width = 250.dp, height = 150.dp) // Adjusted height slightly
-    ) {
-        // Placeholder for the garment image
-        Card(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Kleidungsstück")
+            "Weiß" -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White)
+                )
+            }
+
+            "Karo" -> {
+                CheckedBackground(modifier = Modifier.fillMaxSize())
+            }
+
+            else -> {
+                Image(
+                    painter = painterResource(id = R.drawable.kork),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
             }
         }
-
-        // Lock Button
-        IconButton(
-            onClick = { isLocked = !isLocked },
-            modifier = Modifier.align(Alignment.TopEnd)
-        ) {
-            Icon(
-                imageVector = if (isLocked) Icons.Default.Lock else Icons.Default.LockOpen,
-                contentDescription = "Teil sperren",
-                tint = if (isLocked) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                }
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun HomeScreenPreview() {
-    SliderSchrankTheme {
-        HomeScreen()
     }
 }
