@@ -28,29 +28,64 @@
  */
 package net.ottercloud.sliderschrank
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import androidx.annotation.DrawableRes
+import java.util.Locale
 
-@Composable
-fun CameraScreen(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Camera will be here")
+enum class GarmentType {
+    HEAD,
+    TOP,
+    BOTTOM,
+    FEET
+}
+
+data class Garment(
+    val id: Int,
+    val name: String,
+    val type: GarmentType,
+    @param:DrawableRes val imageResId: Int
+)
+
+private fun getGarmentTypeFromId(id: Int): GarmentType {
+    val idString = id.toString()
+
+    return when {
+        idString.startsWith("1") -> GarmentType.HEAD
+        idString.startsWith("2") -> GarmentType.TOP
+        idString.startsWith("3") -> GarmentType.BOTTOM
+        idString.startsWith("4") -> GarmentType.FEET
+        else -> GarmentType.HEAD
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun CameraScreenPreview() {
-    SliderSchrankTheme {
-        CameraScreen()
+private fun loadGarmentsFromDrawables(): List<Garment> {
+    val garments = mutableListOf<Garment>()
+    val drawableFields = R.drawable::class.java.fields
+
+    for (field in drawableFields) {
+        val resName = field.name
+
+        if (resName.startsWith("img_")) {
+            try {
+                val idString = resName.removePrefix("img_")
+                val id = idString.toInt()
+
+                @DrawableRes val resId = field.getInt(null)
+
+                val type = getGarmentTypeFromId(id)
+
+                val name = "${
+                    type.name.lowercase(Locale.ROOT).replaceFirstChar {
+                        it.titlecase(Locale.ROOT)
+                    }
+                } $id"
+
+                garments.add(Garment(id, name, type, resId))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
+    return garments.sortedBy { it.id }
 }
+
+val dummyGarments: List<Garment> = loadGarmentsFromDrawables()

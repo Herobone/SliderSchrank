@@ -28,29 +28,35 @@
  */
 package net.ottercloud.sliderschrank
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.pager.PagerState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
-@Composable
-fun CameraScreen(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Camera will be here")
-    }
-}
+@OptIn(ExperimentalFoundationApi::class)
+fun performUiShuffle(
+    scope: CoroutineScope,
+    pagerStates: Map<GarmentType, PagerState>,
+    groupedGarments: Map<GarmentType, List<Garment>>,
+    lockedGarmentIds: Set<Int>
+) {
+    scope.launch {
+        pagerStates.forEach { (category, pagerState) ->
+            val garments = groupedGarments[category].orEmpty()
 
-@Preview(showBackground = true)
-@Composable
-private fun CameraScreenPreview() {
-    SliderSchrankTheme {
-        CameraScreen()
+            if (garments.isNotEmpty() && pagerState.pageCount > 1) {
+                val currentGarment = garments[pagerState.currentPage]
+
+                if (currentGarment.id !in lockedGarmentIds) {
+                    var newPage = pagerState.currentPage
+
+                    while (newPage == pagerState.currentPage) {
+                        newPage = (0 until pagerState.pageCount).random()
+                    }
+
+                    pagerState.animateScrollToPage(newPage)
+                }
+            }
+        }
     }
 }

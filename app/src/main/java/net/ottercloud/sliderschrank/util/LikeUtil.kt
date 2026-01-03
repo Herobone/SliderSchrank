@@ -26,31 +26,36 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank
+package net.ottercloud.sliderschrank.util
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
 
-@Composable
-fun CameraScreen(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Camera will be here")
+object LikeUtil {
+
+    val favoriteOutfits = mutableStateListOf<Set<Int>>()
+
+    fun addFavorite(outfitIds: Set<Int>) {
+        if (!favoriteOutfits.contains(outfitIds)) {
+            favoriteOutfits.add(outfitIds)
+            Log.d("LikeUtil", "Outfit added: $outfitIds")
+        }
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-private fun CameraScreenPreview() {
-    SliderSchrankTheme {
-        CameraScreen()
+    fun removeFavorite(outfitIds: Set<Int>) {
+        val removed = favoriteOutfits.remove(outfitIds)
+        if (removed) {
+            Log.d("LikeUtil", "Outfit removed: $outfitIds")
+        }
+    }
+
+    fun isFavorite(outfitIds: Set<Int>): Boolean = favoriteOutfits.contains(outfitIds)
+
+    fun toggleFavorite(outfitIds: Set<Int>) {
+        if (isFavorite(outfitIds)) {
+            removeFavorite(outfitIds)
+        } else {
+            addFavorite(outfitIds)
+        }
     }
 }

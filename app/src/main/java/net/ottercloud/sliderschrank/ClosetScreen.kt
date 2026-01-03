@@ -48,7 +48,7 @@ import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 import net.ottercloud.sliderschrank.util.SettingsManager
 
 @Composable
-fun Kleiderschrank(modifier: Modifier = Modifier) {
+fun Closet(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager(context) }
     val background by settingsManager.background.collectAsState(initial = "Kork")
@@ -98,15 +98,15 @@ fun Kleiderschrank(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text("Willkommen im Kleiderschrank!")
+            Text("Welcome to the closet!")
         }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun KleiderschrankPreview() {
+private fun ClosetPreview() {
     SliderSchrankTheme {
-        Kleiderschrank()
+        Closet()
     }
 }

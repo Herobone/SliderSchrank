@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="closet">Kleiderschrank</string>
+    <string name="settings">Einstellungen</string>
+    <string name="home">Home</string>
+    <string name="camera">Kamera</string>
+    <string name="your_outfit">Dein Outfit</string>
+    <string name="random_outfit">Zufälliges Outfit</string>
+    <string name="save_outfit">Outfit speichern</string>
+    <string name="lock_item">Teil sperren</string>
+</resources>
