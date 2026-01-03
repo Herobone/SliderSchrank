@@ -26,31 +26,51 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank
+package net.ottercloud.sliderschrank.data.dao
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
+import net.ottercloud.sliderschrank.data.model.Piece
+import net.ottercloud.sliderschrank.data.model.PieceTagCrossRef
+import net.ottercloud.sliderschrank.data.model.PieceWithDetails
 
-@Composable
-fun CameraScreen(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Hier kommt die Kamera hin!")
-    }
-}
+@Dao
+interface PieceDao {
+    @Transaction
+    @Query("SELECT * FROM pieces ORDER BY created_at DESC")
+    fun getAllPiecesWithDetails(): Flow<List<PieceWithDetails>>
 
-@Preview(showBackground = true)
-@Composable
-private fun CameraScreenPreview() {
-    SliderSchrankTheme {
-        CameraScreen()
+    @Transaction
+    @Query("SELECT * FROM pieces WHERE id = :id")
+    fun getPieceWithDetailsById(id: Long): Flow<PieceWithDetails?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPiece(piece: Piece): Long
+
+    @Update
+    suspend fun updatePiece(piece: Piece)
+
+    @Delete
+    suspend fun deletePiece(piece: Piece)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertPieceTagCrossRef(crossRef: PieceTagCrossRef)
+
+    @Query("DELETE FROM piece_tag_cross_ref WHERE piece_id = :pieceId")
+    suspend fun deleteTagsForPiece(pieceId: Long)
+
+    @Transaction
+    suspend fun updatePieceWithTags(piece: Piece, tagIds: List<Long>) {
+        updatePiece(piece)
+        deleteTagsForPiece(piece.id)
+        tagIds.forEach { tagId ->
+            insertPieceTagCrossRef(PieceTagCrossRef(piece.id, tagId))
+        }
     }
 }
