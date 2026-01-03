@@ -86,10 +86,10 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
                         Icon(
                             imageVector = destination.icon,
                             contentDescription = destination.label,
-                            modifier = Modifier.size(40.dp) // Apply same size to all icons
+                            modifier = Modifier.size(40.dp)
                         )
                     },
-                    label = null, // Remove all labels
+                    label = null,
                     selected = destination == currentDestination,
                     onClick = { currentDestination = destination }
                 )
@@ -102,7 +102,7 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
                     TopAppBar(
                         title = { Text("Kleiderschrank") },
                         actions = {
-                            IconButton(onClick = { /* TODO: settings button */ }) {
+                            IconButton(onClick = { }) {
                                 Icon(
                                     imageVector = Icons.Default.Settings,
                                     contentDescription = "Einstellungen"
@@ -114,12 +114,11 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
             },
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
-            Box(modifier = Modifier.padding(innerPadding)) {
-                when (currentDestination) {
-                    AppDestinations.HOME -> HomeScreen()
-                    AppDestinations.KAMERA -> CameraScreen()
-                    AppDestinations.KLEIDERSCHRANK -> Kleiderschrank()
-                }
+            val contentModifier = Modifier.padding(innerPadding)
+            when (currentDestination) {
+                AppDestinations.HOME -> HomeScreen(modifier = contentModifier)
+                AppDestinations.KAMERA -> CameraScreen(modifier = contentModifier)
+                AppDestinations.KLEIDERSCHRANK -> Kleiderschrank(modifier = contentModifier)
             }
         }
     }
