@@ -38,19 +38,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 
 @Composable
-fun Kleiderschrank(modifier: Modifier = Modifier) {
+fun Closet(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text("Willkommen im Kleiderschrank!")
+        Text("Welcome to the closet!")
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun KleiderschrankPreview() {
+private fun ClosetPreview() {
     SliderSchrankTheme {
-        Kleiderschrank()
+        Closet()
     }
 }

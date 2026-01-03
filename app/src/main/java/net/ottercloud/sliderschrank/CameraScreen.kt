@@ -43,7 +43,7 @@ fun CameraScreen(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text("Hier kommt die Kamera hin!")
+        Text("Camera will be here")
     }
 }
 

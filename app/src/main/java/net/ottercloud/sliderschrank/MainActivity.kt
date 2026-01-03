@@ -99,7 +99,7 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
     ) {
         Scaffold(
             topBar = {
-                if (currentDestination == AppDestinations.KLEIDERSCHRANK) {
+                if (currentDestination == AppDestinations.CLOSET) {
                     TopAppBar(
                         title = { Text(stringResource(R.string.closet)) },
                         actions = {
@@ -118,8 +118,8 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
             val contentModifier = Modifier.padding(innerPadding)
             when (currentDestination) {
                 AppDestinations.HOME -> HomeScreen(modifier = contentModifier)
-                AppDestinations.KAMERA -> CameraScreen(modifier = contentModifier)
-                AppDestinations.KLEIDERSCHRANK -> Kleiderschrank(modifier = contentModifier)
+                AppDestinations.CAMERA -> CameraScreen(modifier = contentModifier)
+                AppDestinations.CLOSET -> Closet(modifier = contentModifier)
             }
         }
     }
@@ -127,6 +127,6 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
 
 enum class AppDestinations(@StringRes val labelRes: Int, val icon: ImageVector) {
     HOME(R.string.home, Icons.Default.Home),
-    KAMERA(R.string.camera, Icons.Filled.CameraEnhance),
-    KLEIDERSCHRANK(R.string.closet, Icons.Filled.Checkroom)
+    CAMERA(R.string.camera, Icons.Filled.CameraEnhance),
+    CLOSET(R.string.closet, Icons.Filled.Checkroom)
 }

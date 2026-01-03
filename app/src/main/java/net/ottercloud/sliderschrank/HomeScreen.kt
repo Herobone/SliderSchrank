@@ -104,7 +104,7 @@ private class HomeScreenState(
     }
 
     fun onGarmentClick(category: GarmentType) {
-        println("Kategorie $category wurde geklickt.")
+        println("Category $category was clicked")
     }
 
     fun onFavoriteClick() {
