@@ -26,31 +26,39 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank
+package net.ottercloud.sliderschrank.data.model
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 
-@Composable
-fun CameraScreen(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Hier kommt die Kamera hin!")
-    }
-}
+@Entity(
+    tableName = "outfit_piece_cross_ref",
+    primaryKeys = ["outfit_id", "piece_id"],
+    foreignKeys = [
+        ForeignKey(
+            entity = Outfit::class,
+            parentColumns = ["id"],
+            childColumns = ["outfit_id"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = Piece::class,
+            parentColumns = ["id"],
+            childColumns = ["piece_id"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index(value = ["outfit_id"]),
+        Index(value = ["piece_id"])
+    ]
+)
+data class OutfitPieceCrossRef(
+    @ColumnInfo(name = "outfit_id")
+    val outfitId: Long,
 
-@Preview(showBackground = true)
-@Composable
-private fun CameraScreenPreview() {
-    SliderSchrankTheme {
-        CameraScreen()
-    }
-}
+    @ColumnInfo(name = "piece_id")
+    val pieceId: Long
+)
