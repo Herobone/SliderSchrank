@@ -63,6 +63,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -160,46 +161,88 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             }
         }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-    ) {
-        HomeScreenTopBar(
-            isOutfitSaved = state.isCurrentOutfitSaved,
-            onShuffleClick = onShuffleClick,
-            onFavoriteClick = state::onFavoriteClick
-        )
+    Box(modifier = modifier.fillMaxSize()) {
+        when (background) {
+            "Kork" -> {
+                Image(
+                    painter = painterResource(id = R.drawable.kork),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            "Grau" -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Gray)
+                )
+            }
+
+            "Weiß" -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White)
+                )
+            }
+
+            "Karo" -> {
+                CheckedBackground(modifier = Modifier.fillMaxSize())
+            }
+
+            else -> {
+                Image(
+                    painter = painterResource(id = R.drawable.kork),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
 
         Column(
             modifier = Modifier
-                .fillMaxHeight(),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .statusBarsPadding()
         ) {
-            categoryOrder.forEach { category ->
-                val garmentsForCategory = state.groupedGarments[category].orEmpty()
-                val pagerState = state.pagerStates[category]
-                val weight = when (category) {
-                    GarmentType.HEAD, GarmentType.FEET -> 0.2f
-                    else -> 0.3f
-                }
+            HomeScreenTopBar(
+                isOutfitSaved = state.isCurrentOutfitSaved,
+                onShuffleClick = onShuffleClick,
+                onFavoriteClick = state::onFavoriteClick
+            )
 
-                if (garmentsForCategory.isNotEmpty() && pagerState != null) {
-                    val currentGarment =
-                        garmentsForCategory.getOrNull(pagerState.currentPage)
-                    val isCurrentItemLocked = currentGarment?.id in state.lockedGarmentIds
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                categoryOrder.forEach { category ->
+                    val garmentsForCategory = state.groupedGarments[category].orEmpty()
+                    val pagerState = state.pagerStates[category]
+                    val weight = when (category) {
+                        GarmentType.HEAD, GarmentType.FEET -> 0.2f
+                        else -> 0.3f
+                    }
 
-                    GarmentSlider(
-                        garments = garmentsForCategory,
-                        pagerState = pagerState,
-                        isSwipeEnabled = !isCurrentItemLocked,
-                        lockedGarmentIds = state.lockedGarmentIds,
-                        onLockClick = state::onLockClick,
-                        onGarmentClick = state::onGarmentClick,
-                        modifier = Modifier
-                            .weight(weight)
-                            .fillMaxWidth()
-                    )
+                    if (garmentsForCategory.isNotEmpty() && pagerState != null) {
+                        val currentGarment =
+                            garmentsForCategory.getOrNull(pagerState.currentPage)
+                        val isCurrentItemLocked = currentGarment?.id in state.lockedGarmentIds
+
+                        GarmentSlider(
+                            garments = garmentsForCategory,
+                            pagerState = pagerState,
+                            isSwipeEnabled = !isCurrentItemLocked,
+                            lockedGarmentIds = state.lockedGarmentIds,
+                            onLockClick = state::onLockClick,
+                            onGarmentClick = state::onGarmentClick,
+                            modifier = Modifier
+                                .weight(weight)
+                                .fillMaxWidth()
+                        )
+                    }
                 }
             }
         }

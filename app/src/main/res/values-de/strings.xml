@@ -8,4 +8,5 @@
     <string name="random_outfit">Zufälliges Outfit</string>
     <string name="save_outfit">Outfit speichern</string>
     <string name="lock_item">Teil sperren</string>
+    <string name="back">Zurück</string>
 </resources>

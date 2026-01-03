@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraEnhance
 import androidx.compose.material.icons.filled.Checkroom
@@ -82,7 +83,7 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
     NavigationSuiteScaffold(
         modifier = modifier,
         navigationSuiteItems = {
-            AppDestinations.entries.filter { !it.isSettings }.forEach { destination ->
+            AppDestinations.entries.filter { it.navigatorVisible }.forEach { destination ->
                 item(
                     icon = {
                         Icon(
@@ -114,17 +115,17 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
                             }
                         }
                     )
-                } else if (currentDestination.isSettings) {
+                } else if (currentDestination == AppDestinations.SETTINGS) {
                     TopAppBar(
-                        title = { Text("Einstellungen") },
+                        title = { Text(stringResource(R.string.settings)) },
                         navigationIcon = {
                             IconButton(onClick = {
                                 currentDestination =
-                                    AppDestinations.KLEIDERSCHRANK
+                                    AppDestinations.CLOSET
                             }) {
                                 Icon(
-                                    imageVector = Icons.Default.ArrowBack,
-                                    contentDescription = "Zurück"
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.back)
                                 )
                             }
                         }
@@ -138,15 +139,19 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
                 AppDestinations.HOME -> HomeScreen(modifier = contentModifier)
                 AppDestinations.CAMERA -> CameraScreen(modifier = contentModifier)
                 AppDestinations.CLOSET -> Closet(modifier = contentModifier)
-                AppDestinations.SETTINGS -> SettingsScreen()
+                AppDestinations.SETTINGS -> SettingsScreen(modifier = contentModifier)
             }
         }
     }
 }
 
-enum class AppDestinations(@param:StringRes val labelRes: Int, val icon: ImageVector) {
+enum class AppDestinations(
+    @param:StringRes val labelRes: Int,
+    val icon: ImageVector,
+    val navigatorVisible: Boolean = true
+) {
     HOME(R.string.home, Icons.Default.Home),
     CAMERA(R.string.camera, Icons.Filled.CameraEnhance),
     CLOSET(R.string.closet, Icons.Filled.Checkroom),
-    SETTINGS("Einstellungen", Icons.Default.Settings, isSettings = true)
+    SETTINGS(R.string.settings, Icons.Default.Settings, navigatorVisible = false)
 }
