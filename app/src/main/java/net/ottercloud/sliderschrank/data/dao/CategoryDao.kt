@@ -26,31 +26,28 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank
+package net.ottercloud.sliderschrank.data.dao
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
+import net.ottercloud.sliderschrank.data.model.Category
 
-@Composable
-fun CameraScreen(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Hier kommt die Kamera hin!")
-    }
-}
+@Dao
+interface CategoryDao {
+    @Query("SELECT * FROM categories ORDER BY name ASC")
+    fun getAllCategories(): Flow<List<Category>>
 
-@Preview(showBackground = true)
-@Composable
-private fun CameraScreenPreview() {
-    SliderSchrankTheme {
-        CameraScreen()
-    }
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCategory(category: Category): Long
+
+    @Update
+    suspend fun updateCategory(category: Category)
+
+    @Delete
+    suspend fun deleteCategory(category: Category)
 }
