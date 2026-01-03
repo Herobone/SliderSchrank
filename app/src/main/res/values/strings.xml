@@ -8,4 +8,6 @@
     <string name="random_outfit">Random Outfit</string>
     <string name="save_outfit">Save Outfit</string>
     <string name="lock_item">Lock item</string>
+    <string name="take_picture">Take Picture</string>
+    <string name="import_from_gallery">Import from Gallery</string>
 </resources>
