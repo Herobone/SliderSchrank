@@ -27,23 +27,128 @@
  */
 package net.ottercloud.sliderschrank
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 
 @Composable
 fun CameraScreen(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+    val context = LocalContext.current
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Text("Hier kommt die Kamera hin!")
+        Text(
+            text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
+                "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. " +
+                "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris " +
+                "nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in " +
+                "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla " +
+                "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in " +
+                "culpa qui officia deserunt mollit anim id est laborum.",
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Justify,
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
+
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Button(
+                onClick = {
+                    // TODO: Implementiere Foto machen Funktionalität
+                    handleTakePicture(context)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
+                Text("Foto Machen")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    // TODO: Implementiere Galerie Import Funktionalität
+                    handleImportFromGallery(context)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
+                Text("Aus Galerie Importieren")
+            }
+        }
     }
+}
+
+// Platzhalter-Funktionen für die spätere Implementierung
+private fun handleTakePicture(context: android.content.Context) {
+    // TODO: Hier wird später die CameraService verwendet
+    // val cameraService = CameraService(context)
+    // if (cameraService.hasCameraPermission()) {
+    //     cameraService.takePicture(
+    //         onImageCaptured = { imagePath ->
+    //             // Bild wurde erfolgreich aufgenommen
+    //         },
+    //         onError = { error ->
+    //             // Fehler beim Aufnehmen
+    //         }
+    //     )
+    // } else {
+    //     cameraService.requestCameraPermission { granted ->
+    //         if (granted) {
+    //             // Berechtigung erhalten, versuche erneut
+    //         }
+    //     }
+    // }
+}
+
+private fun handleImportFromGallery(context: android.content.Context) {
+    // TODO: Hier wird später die GalleryService verwendet
+    // val galleryService = GalleryService(context)
+    // if (galleryService.hasStoragePermission()) {
+    //     galleryService.selectImageFromGallery(
+    //         onImageSelected = { uri ->
+    //             // Bild wurde ausgewählt
+    //             galleryService.loadImageFromUri(uri,
+    //                 onImageLoaded = { imageData ->
+    //                     // Bild wurde geladen
+    //                 },
+    //                 onError = { error ->
+    //                     // Fehler beim Laden
+    //                 }
+    //             )
+    //         },
+    //         onError = { error ->
+    //             // Fehler bei der Auswahl
+    //         }
+    //     )
+    // } else {
+    //     galleryService.requestStoragePermission { granted ->
+    //         if (granted) {
+    //             // Berechtigung erhalten, versuche erneut
+    //         }
+    //     }
+    // }
 }
 
 @Preview(showBackground = true)
