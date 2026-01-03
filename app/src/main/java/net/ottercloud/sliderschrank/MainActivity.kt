@@ -125,7 +125,7 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
     }
 }
 
-enum class AppDestinations(@StringRes val labelRes: Int, val icon: ImageVector) {
+enum class AppDestinations(@param:StringRes val labelRes: Int, val icon: ImageVector) {
     HOME(R.string.home, Icons.Default.Home),
     CAMERA(R.string.camera, Icons.Filled.CameraEnhance),
     CLOSET(R.string.closet, Icons.Filled.Checkroom)
