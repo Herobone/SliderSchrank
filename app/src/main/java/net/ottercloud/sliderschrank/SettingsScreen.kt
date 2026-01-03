@@ -28,6 +28,7 @@
  */
 package net.ottercloud.sliderschrank
 
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -53,7 +54,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.os.LocaleListCompat
+import java.util.Locale
 import kotlinx.coroutines.launch
 import net.ottercloud.sliderschrank.util.SettingsManager
 
@@ -63,14 +67,27 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager(context) }
     val scope = rememberCoroutineScope()
-    val backgroundOptions = listOf("Kork", "Grau", "Weiß", "Karo")
+    val backgroundOptions = AppBackground.entries
     val currentBackground by settingsManager.background.collectAsState(
-        initial = backgroundOptions.first()
+        initial = AppBackground.CORK
     )
 
     var showResetDialog by remember { mutableStateOf(false) }
     var showSecondResetDialog by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
+
+    val languageOptions = AppLanguage.entries
+    val currentLocale = if (!AppCompatDelegate.getApplicationLocales().isEmpty) {
+        AppCompatDelegate.getApplicationLocales()[0]
+    } else {
+        null
+    }
+    val currentLanguage = if (currentLocale != null) {
+        AppLanguage.fromCode(currentLocale.language)
+    } else {
+        AppLanguage.fromCode(Locale.getDefault().language)
+    }
+    var languageExpanded by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(
@@ -78,12 +95,50 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Hintergrund")
+            Text(stringResource(R.string.language_setting_title))
+            ExposedDropdownMenuBox(expanded = languageExpanded, onExpandedChange = {
+                languageExpanded = !languageExpanded
+            }) {
+                TextField(
+                    value = stringResource(currentLanguage.labelRes),
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = languageExpanded)
+                    },
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                )
+                ExposedDropdownMenu(expanded = languageExpanded, onDismissRequest = {
+                    languageExpanded =
+                        false
+                }) {
+                    languageOptions.forEach { selectionOption ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(selectionOption.labelRes)) },
+                            onClick = {
+                                val appLocale: LocaleListCompat = LocaleListCompat.forLanguageTags(
+                                    selectionOption.code
+                                )
+                                AppCompatDelegate.setApplicationLocales(appLocale)
+                                languageExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(stringResource(R.string.background_setting_title))
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = {
                 expanded = !expanded
             }) {
                 TextField(
-                    value = currentBackground,
+                    value = stringResource(currentBackground.labelRes),
                     onValueChange = {},
                     readOnly = true,
                     trailingIcon = {
@@ -94,7 +149,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     backgroundOptions.forEach { selectionOption ->
                         DropdownMenuItem(
-                            text = { Text(selectionOption) },
+                            text = { Text(stringResource(selectionOption.labelRes)) },
                             onClick = {
                                 scope.launch {
                                     settingsManager.setBackground(selectionOption)
@@ -108,27 +163,27 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
         }
 
         Button(onClick = { showResetDialog = true }) {
-            Text("App zurücksetzen")
+            Text(stringResource(R.string.reset_app_title))
         }
 
         if (showResetDialog) {
             AlertDialog(
                 onDismissRequest = { showResetDialog = false },
-                title = { Text("App zurücksetzen?") },
+                title = { Text(stringResource(R.string.reset_app_title)) },
                 text = {
-                    Text("Möchten Sie die App wirklich zurücksetzen? Alle Daten gehen verloren.")
+                    Text(stringResource(R.string.reset_data_confirmation))
                 },
                 confirmButton = {
                     TextButton(onClick = {
                         showResetDialog = false
                         showSecondResetDialog = true
                     }) {
-                        Text("Zurücksetzen")
+                        Text(stringResource(R.string.reset))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showResetDialog = false }) {
-                        Text("Abbrechen")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )
@@ -137,10 +192,10 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
         if (showSecondResetDialog) {
             AlertDialog(
                 onDismissRequest = { showSecondResetDialog = false },
-                title = { Text("Letzte Warnung") },
+                title = { Text(stringResource(R.string.last_warning)) },
                 text = {
                     Text(
-                        "Sind Sie sich absolut sicher? Diese Aktion kann nicht rückgängig gemacht werden."
+                        stringResource(R.string.reset_data_confirmation_second)
                     )
                 },
                 confirmButton = {
@@ -150,12 +205,12 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                         }
                         showSecondResetDialog = false
                     }) {
-                        Text("Ja, alles löschen")
+                        Text(stringResource(R.string.delete_everything))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showSecondResetDialog = false }) {
-                        Text("Abbrechen")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )

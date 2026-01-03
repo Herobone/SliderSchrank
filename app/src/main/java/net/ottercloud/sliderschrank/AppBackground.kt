@@ -26,42 +26,17 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank.util
+package net.ottercloud.sliderschrank
 
-import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import net.ottercloud.sliderschrank.AppBackground
+import androidx.annotation.StringRes
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
-
-class SettingsManager(context: Context) {
-
-    private val dataStore = context.dataStore
+enum class AppBackground(val key: String, @param:StringRes val labelRes: Int) {
+    CORK("cork", R.string.background_cork),
+    GRAY("grey", R.string.background_gray),
+    WHITE("white", R.string.background_white),
+    CHECKERED("checkerboard", R.string.background_checkered);
 
     companion object {
-        val BACKGROUND_KEY = stringPreferencesKey("background")
-    }
-
-    val background: Flow<AppBackground> = dataStore.data.map {
-        val key = it[BACKGROUND_KEY] ?: AppBackground.CORK.key
-        AppBackground.fromKey(key)
-    }
-
-    suspend fun setBackground(background: AppBackground) {
-        dataStore.edit {
-            it[BACKGROUND_KEY] = background.key
-        }
-    }
-
-    suspend fun clearData() {
-        dataStore.edit {
-            it.clear()
-        }
+        fun fromKey(key: String): AppBackground = entries.find { it.key == key } ?: CORK
     }
 }

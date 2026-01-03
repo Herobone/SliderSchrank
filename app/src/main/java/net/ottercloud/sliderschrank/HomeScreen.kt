@@ -142,7 +142,7 @@ private fun rememberHomeScreenState(
 fun HomeScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager(context) }
-    val background by settingsManager.background.collectAsState(initial = "Kork")
+    val background by settingsManager.background.collectAsState(initial = AppBackground.CORK)
 
     rememberCoroutineScope()
     val state = rememberHomeScreenState()
@@ -163,7 +163,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 
     Box(modifier = modifier.fillMaxSize()) {
         when (background) {
-            "Kork" -> {
+            AppBackground.CORK -> {
                 Image(
                     painter = painterResource(id = R.drawable.kork),
                     contentDescription = null,
@@ -172,7 +172,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 )
             }
 
-            "Grau" -> {
+            AppBackground.GRAY -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -180,7 +180,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 )
             }
 
-            "Weiß" -> {
+            AppBackground.WHITE -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -188,17 +188,8 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 )
             }
 
-            "Karo" -> {
+            AppBackground.CHECKERED -> {
                 CheckedBackground(modifier = Modifier.fillMaxSize())
-            }
-
-            else -> {
-                Image(
-                    painter = painterResource(id = R.drawable.kork),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
             }
         }
 

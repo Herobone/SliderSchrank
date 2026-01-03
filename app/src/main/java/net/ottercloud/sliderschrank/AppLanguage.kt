@@ -26,42 +26,15 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank.util
+package net.ottercloud.sliderschrank
 
-import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import net.ottercloud.sliderschrank.AppBackground
+import androidx.annotation.StringRes
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
-
-class SettingsManager(context: Context) {
-
-    private val dataStore = context.dataStore
+enum class AppLanguage(val code: String, @param:StringRes val labelRes: Int) {
+    ENGLISH("en", R.string.language_english),
+    GERMAN("de", R.string.language_german);
 
     companion object {
-        val BACKGROUND_KEY = stringPreferencesKey("background")
-    }
-
-    val background: Flow<AppBackground> = dataStore.data.map {
-        val key = it[BACKGROUND_KEY] ?: AppBackground.CORK.key
-        AppBackground.fromKey(key)
-    }
-
-    suspend fun setBackground(background: AppBackground) {
-        dataStore.edit {
-            it[BACKGROUND_KEY] = background.key
-        }
-    }
-
-    suspend fun clearData() {
-        dataStore.edit {
-            it.clear()
-        }
+        fun fromCode(code: String): AppLanguage = entries.find { it.code == code } ?: ENGLISH
     }
 }

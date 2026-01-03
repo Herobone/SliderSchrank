@@ -9,4 +9,22 @@
     <string name="save_outfit">Outfit speichern</string>
     <string name="lock_item">Teil sperren</string>
     <string name="back">Zurück</string>
+    <string name="background_cork">Kork</string>
+    <string name="background_gray">Grau</string>
+    <string name="background_white">Weiß</string>
+    <string name="background_checkered">Karo</string>
+    <string name="background_setting_title">Hintergrund</string>
+    <string name="language_setting_title">Sprache</string>
+    <string name="language_english">Englisch</string>
+    <string name="language_german">Deutsch</string>
+    <string name="reset_data">Daten zurücksetzen</string>
+    <string name="reset_data_confirmation">Bist du sicher, dass du alle Daten zurücksetzen möchtest?</string>
+    <string name="reset_data_confirmation_second">Wirklich sicher? Das kann nicht rückgängig gemacht werden.</string>
+    <string name="yes">Ja</string>
+    <string name="no">Nein</string>
+    <string name="reset_app_title">App zurücksetzen?</string>
+    <string name="last_warning">Letzte Warnung</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="reset">Zurücksetzen</string>
+    <string name="delete_everything">Ja, alles löschen</string>
 </resources>
