@@ -38,14 +38,14 @@ object LikeUtil {
     fun addFavorite(outfitIds: Set<Int>) {
         if (!favoriteOutfits.contains(outfitIds)) {
             favoriteOutfits.add(outfitIds)
-            Log.d("LikeUtil", "Outfit hinzugefügt: $outfitIds")
+            Log.d("LikeUtil", "Outfit added: $outfitIds")
         }
     }
 
     fun removeFavorite(outfitIds: Set<Int>) {
         val removed = favoriteOutfits.remove(outfitIds)
         if (removed) {
-            Log.d("LikeUtil", "Outfit entfernt: $outfitIds")
+            Log.d("LikeUtil", "Outfit removed: $outfitIds")
         }
     }
 

@@ -65,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
@@ -103,7 +104,7 @@ private class HomeScreenState(
     }
 
     fun onGarmentClick(category: GarmentType) {
-        println("Kategorie $category wurde geklickt.")
+        println("Category $category was clicked")
     }
 
     fun onFavoriteClick() {
@@ -208,10 +209,13 @@ private fun HomeScreenTopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text("Dein Outfit", style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(R.string.your_outfit), style = MaterialTheme.typography.titleLarge)
         Row {
             IconButton(onClick = onShuffleClick) {
-                Icon(Icons.Default.Shuffle, contentDescription = "Zufälliges Outfit")
+                Icon(
+                    Icons.Default.Shuffle,
+                    contentDescription = stringResource(R.string.random_outfit)
+                )
             }
             IconButton(onClick = onFavoriteClick) {
                 Icon(
@@ -220,7 +224,7 @@ private fun HomeScreenTopBar(
                     } else {
                         Icons.Default.FavoriteBorder
                     },
-                    contentDescription = "Outfit speichern",
+                    contentDescription = stringResource(R.string.save_outfit),
                     tint = if (isOutfitSaved) {
                         MaterialTheme.colorScheme.primary
                     } else {
@@ -312,7 +316,7 @@ fun GarmentItem(
         ) {
             Icon(
                 imageVector = if (isLocked) Icons.Default.Lock else Icons.Default.LockOpen,
-                contentDescription = "Teil sperren",
+                contentDescription = stringResource(R.string.lock_item),
                 tint = if (isLocked) {
                     MaterialTheme.colorScheme.primary
                 } else {
