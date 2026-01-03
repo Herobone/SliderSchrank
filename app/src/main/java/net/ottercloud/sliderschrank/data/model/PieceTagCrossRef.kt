@@ -26,31 +26,39 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank
+package net.ottercloud.sliderschrank.data.model
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 
-@Composable
-fun CameraScreen(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Hier kommt die Kamera hin!")
-    }
-}
+@Entity(
+    tableName = "piece_tag_cross_ref",
+    primaryKeys = ["piece_id", "tag_id"],
+    foreignKeys = [
+        ForeignKey(
+            entity = Piece::class,
+            parentColumns = ["id"],
+            childColumns = ["piece_id"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = Tag::class,
+            parentColumns = ["id"],
+            childColumns = ["tag_id"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index(value = ["piece_id"]),
+        Index(value = ["tag_id"])
+    ]
+)
+data class PieceTagCrossRef(
+    @ColumnInfo(name = "piece_id")
+    val pieceId: Long,
 
-@Preview(showBackground = true)
-@Composable
-private fun CameraScreenPreview() {
-    SliderSchrankTheme {
-        CameraScreen()
-    }
-}
+    @ColumnInfo(name = "tag_id")
+    val tagId: Long
+)
