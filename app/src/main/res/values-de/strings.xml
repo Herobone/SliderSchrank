@@ -10,4 +10,17 @@
     <string name="lock_item">Teil sperren</string>
     <string name="take_picture">Foto aufnehmen</string>
     <string name="import_from_gallery">Aus Galerie importieren</string>
+    <string name="camera_permission_denied">Kamera-Berechtigung abgelehnt</string>
+    <string name="camera_permission_denied_message">Der Kamera-Zugriff wurde abgelehnt. Diese Funktion ist ohne Kamera-Berechtigung nicht verfügbar.</string>
+    <string name="image_save_failed">Bild konnte nicht gespeichert werden</string>
+    <string name="image_save_failed_message">Das Bild konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.</string>
+    <string name="ok">OK</string>
+    <string name="flash_on">Blitz an</string>
+    <string name="flash_off">Blitz aus</string>
+    <string name="close">Schließen</string>
+    <string name="camera_permission_permanently_denied_message">Die Kameraberechtigung wurde dauerhaft verweigert. Bitte aktiviere sie in den App-Einstellungen.</string>
+    <string name="open_settings">Einstellungen öffnen</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="keep_photo">Foto behalten</string>
+    <string name="retake_photo">Neues Foto</string>
 </resources>

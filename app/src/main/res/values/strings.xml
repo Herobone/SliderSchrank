@@ -10,4 +10,17 @@
     <string name="lock_item">Lock item</string>
     <string name="take_picture">Take Picture</string>
     <string name="import_from_gallery">Import from Gallery</string>
+    <string name="camera_permission_denied">Camera permission denied</string>
+    <string name="camera_permission_denied_message">Camera access was denied. This feature is not available without camera permission.</string>
+    <string name="image_save_failed">Failed to save image</string>
+    <string name="image_save_failed_message">The image could not be saved. Please try again.</string>
+    <string name="ok">OK</string>
+    <string name="flash_on">Flash on</string>
+    <string name="flash_off">Flash off</string>
+    <string name="close">Close</string>
+    <string name="camera_permission_permanently_denied_message">Camera permission was permanently denied. Please enable it in the app settings.</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="cancel">Cancel</string>
+    <string name="keep_photo">Keep photo</string>
+    <string name="retake_photo">Retake photo</string>
 </resources>

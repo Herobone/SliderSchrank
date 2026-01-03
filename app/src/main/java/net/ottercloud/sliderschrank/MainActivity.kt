@@ -97,29 +97,34 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
             }
         }
     ) {
-        Scaffold(
-            topBar = {
-                if (currentDestination == AppDestinations.CLOSET) {
-                    TopAppBar(
-                        title = { Text(stringResource(R.string.closet)) },
-                        actions = {
-                            IconButton(onClick = { }) {
-                                Icon(
-                                    imageVector = Icons.Default.Settings,
-                                    contentDescription = stringResource(R.string.settings)
-                                )
+        // Camera screen is rendered fullscreen without Scaffold
+        if (currentDestination == AppDestinations.CAMERA) {
+            CameraScreen(modifier = Modifier.fillMaxSize())
+        } else {
+            Scaffold(
+                topBar = {
+                    if (currentDestination == AppDestinations.CLOSET) {
+                        TopAppBar(
+                            title = { Text(stringResource(R.string.closet)) },
+                            actions = {
+                                IconButton(onClick = { }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Settings,
+                                        contentDescription = stringResource(R.string.settings)
+                                    )
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            ) { innerPadding ->
+                val contentModifier = Modifier.padding(innerPadding)
+                when (currentDestination) {
+                    AppDestinations.HOME -> HomeScreen(modifier = contentModifier)
+                    AppDestinations.CLOSET -> Closet(modifier = contentModifier)
+                    AppDestinations.CAMERA -> { /* Already handled above */ }
                 }
-            },
-            modifier = Modifier.fillMaxSize()
-        ) { innerPadding ->
-            val contentModifier = Modifier.padding(innerPadding)
-            when (currentDestination) {
-                AppDestinations.HOME -> HomeScreen(modifier = contentModifier)
-                AppDestinations.CAMERA -> CameraScreen(modifier = contentModifier)
-                AppDestinations.CLOSET -> Closet(modifier = contentModifier)
             }
         }
     }
