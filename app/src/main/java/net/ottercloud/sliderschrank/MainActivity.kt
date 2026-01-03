@@ -1,7 +1,8 @@
 /*
  * Copyright (c) 2025 OtterCloud
  *
- * Redistribution and use in source and binary forms, with or without * modification, are permitted provided that the following conditions are met:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
@@ -31,7 +32,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -54,6 +55,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
@@ -84,11 +86,11 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
                     icon = {
                         Icon(
                             imageVector = destination.icon,
-                            contentDescription = destination.label,
-                            modifier = Modifier.size(40.dp) // Apply same size to all icons
+                            contentDescription = stringResource(destination.labelRes),
+                            modifier = Modifier.size(40.dp)
                         )
                     },
-                    label = null, // Remove all labels
+                    label = null,
                     selected = destination == currentDestination,
                     onClick = { currentDestination = destination }
                 )
@@ -97,14 +99,14 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
     ) {
         Scaffold(
             topBar = {
-                if (currentDestination == AppDestinations.KLEIDERSCHRANK) {
+                if (currentDestination == AppDestinations.CLOSET) {
                     TopAppBar(
-                        title = { Text("Kleiderschrank") },
+                        title = { Text(stringResource(R.string.closet)) },
                         actions = {
-                            IconButton(onClick = { /* TODO: settings button */ }) {
+                            IconButton(onClick = { }) {
                                 Icon(
                                     imageVector = Icons.Default.Settings,
-                                    contentDescription = "Einstellungen"
+                                    contentDescription = stringResource(R.string.settings)
                                 )
                             }
                         }
@@ -113,19 +115,18 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
             },
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
-            Box(modifier = Modifier.padding(innerPadding)) {
-                when (currentDestination) {
-                    AppDestinations.HOME -> HomeScreen()
-                    AppDestinations.KAMERA -> CameraScreen()
-                    AppDestinations.KLEIDERSCHRANK -> Kleiderschrank()
-                }
+            val contentModifier = Modifier.padding(innerPadding)
+            when (currentDestination) {
+                AppDestinations.HOME -> HomeScreen(modifier = contentModifier)
+                AppDestinations.CAMERA -> CameraScreen(modifier = contentModifier)
+                AppDestinations.CLOSET -> Closet(modifier = contentModifier)
             }
         }
     }
 }
 
-enum class AppDestinations(val label: String, val icon: ImageVector) {
-    HOME("Home", Icons.Default.Home),
-    KAMERA("Kamera", Icons.Filled.CameraEnhance),
-    KLEIDERSCHRANK("Kleiderschrank", Icons.Filled.Checkroom)
+enum class AppDestinations(@param:StringRes val labelRes: Int, val icon: ImageVector) {
+    HOME(R.string.home, Icons.Default.Home),
+    CAMERA(R.string.camera, Icons.Filled.CameraEnhance),
+    CLOSET(R.string.closet, Icons.Filled.Checkroom)
 }

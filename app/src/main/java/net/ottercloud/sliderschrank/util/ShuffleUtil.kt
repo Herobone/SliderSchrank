@@ -28,23 +28,35 @@
  */
 package net.ottercloud.sliderschrank
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
-import org.junit.Assert.assertEquals
-import org.junit.Test
-import org.junit.runner.RunWith
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.pager.PagerState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
-/**
- * Instrumented test, which will execute on an Android device.
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- */
-@RunWith(AndroidJUnit4::class)
-class ExampleInstrumentedTest {
-    @Test
-    fun useAppContext() {
-        // Context of the app under test.
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("net.ottercloud.sliderschrank", appContext.packageName)
+@OptIn(ExperimentalFoundationApi::class)
+fun performUiShuffle(
+    scope: CoroutineScope,
+    pagerStates: Map<GarmentType, PagerState>,
+    groupedGarments: Map<GarmentType, List<Garment>>,
+    lockedGarmentIds: Set<Int>
+) {
+    scope.launch {
+        pagerStates.forEach { (category, pagerState) ->
+            val garments = groupedGarments[category].orEmpty()
+
+            if (garments.isNotEmpty() && pagerState.pageCount > 1) {
+                val currentGarment = garments[pagerState.currentPage]
+
+                if (currentGarment.id !in lockedGarmentIds) {
+                    var newPage = pagerState.currentPage
+
+                    while (newPage == pagerState.currentPage) {
+                        newPage = (0 until pagerState.pageCount).random()
+                    }
+
+                    pagerState.animateScrollToPage(newPage)
+                }
+            }
+        }
     }
 }

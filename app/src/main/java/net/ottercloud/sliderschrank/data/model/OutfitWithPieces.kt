@@ -26,25 +26,35 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank
+package net.ottercloud.sliderschrank.data.model
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
-import org.junit.Assert.assertEquals
-import org.junit.Test
-import org.junit.runner.RunWith
+import androidx.room.Embedded
+import androidx.room.Junction
+import androidx.room.Relation
 
-/**
- * Instrumented test, which will execute on an Android device.
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- */
-@RunWith(AndroidJUnit4::class)
-class ExampleInstrumentedTest {
-    @Test
-    fun useAppContext() {
-        // Context of the app under test.
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("net.ottercloud.sliderschrank", appContext.packageName)
-    }
-}
+data class OutfitWithPieces(
+    @Embedded
+    val outfit: Outfit,
+
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "id",
+        associateBy = Junction(
+            value = OutfitPieceCrossRef::class,
+            parentColumn = "outfit_id",
+            entityColumn = "piece_id"
+        )
+    )
+    val pieces: List<Piece>,
+
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "id",
+        associateBy = Junction(
+            value = OutfitTagCrossRef::class,
+            parentColumn = "outfit_id",
+            entityColumn = "tag_id"
+        )
+    )
+    val tags: List<Tag>
+)

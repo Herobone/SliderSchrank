@@ -26,25 +26,36 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank
+package net.ottercloud.sliderschrank.util
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
-import org.junit.Assert.assertEquals
-import org.junit.Test
-import org.junit.runner.RunWith
+import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
 
-/**
- * Instrumented test, which will execute on an Android device.
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- */
-@RunWith(AndroidJUnit4::class)
-class ExampleInstrumentedTest {
-    @Test
-    fun useAppContext() {
-        // Context of the app under test.
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("net.ottercloud.sliderschrank", appContext.packageName)
+object LikeUtil {
+
+    val favoriteOutfits = mutableStateListOf<Set<Int>>()
+
+    fun addFavorite(outfitIds: Set<Int>) {
+        if (!favoriteOutfits.contains(outfitIds)) {
+            favoriteOutfits.add(outfitIds)
+            Log.d("LikeUtil", "Outfit added: $outfitIds")
+        }
+    }
+
+    fun removeFavorite(outfitIds: Set<Int>) {
+        val removed = favoriteOutfits.remove(outfitIds)
+        if (removed) {
+            Log.d("LikeUtil", "Outfit removed: $outfitIds")
+        }
+    }
+
+    fun isFavorite(outfitIds: Set<Int>): Boolean = favoriteOutfits.contains(outfitIds)
+
+    fun toggleFavorite(outfitIds: Set<Int>) {
+        if (isFavorite(outfitIds)) {
+            removeFavorite(outfitIds)
+        } else {
+            addFavorite(outfitIds)
+        }
     }
 }

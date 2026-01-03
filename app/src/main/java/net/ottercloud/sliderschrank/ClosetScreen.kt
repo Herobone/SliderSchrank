@@ -1,7 +1,8 @@
 /*
  * Copyright (c) 2025 OtterCloud
  *
- * Redistribution and use in source and binary forms, with or without * modification, are permitted provided that the following conditions are met:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
@@ -37,19 +38,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 
 @Composable
-fun Kleiderschrank(modifier: Modifier = Modifier) {
+fun Closet(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text("Willkommen im Kleiderschrank!")
+        Text("Welcome to the closet!")
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun KleiderschrankPreview() {
+private fun ClosetPreview() {
     SliderSchrankTheme {
-        Kleiderschrank()
+        Closet()
     }
 }

@@ -1,3 +1,11 @@
 <resources>
-    <string name="app_name">SliderSchrank</string>
+    <string name="app_name" translatable="false">SliderSchrank</string>
+    <string name="closet">Closet</string>
+    <string name="settings">Settings</string>
+    <string name="home">Home</string>
+    <string name="camera">Camera</string>
+    <string name="your_outfit">Your Outfit</string>
+    <string name="random_outfit">Random Outfit</string>
+    <string name="save_outfit">Save Outfit</string>
+    <string name="lock_item">Lock item</string>
 </resources>
