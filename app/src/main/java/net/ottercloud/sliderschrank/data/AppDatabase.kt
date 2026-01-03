@@ -71,13 +71,13 @@ abstract class AppDatabase : RoomDatabase() {
         private var instance: AppDatabase? = null
 
         fun getDatabase(context: Context): AppDatabase = instance ?: synchronized(this) {
-            val newInstance = Room.databaseBuilder(
+            instance ?: Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
                 "sliderschrank_database"
-            ).build()
-            instance = newInstance
-            newInstance
+            ).build().also { newInstance ->
+                instance = newInstance
+            }
         }
     }
 }

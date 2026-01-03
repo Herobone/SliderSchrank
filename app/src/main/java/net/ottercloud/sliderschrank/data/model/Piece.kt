@@ -32,6 +32,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
+import androidx.room.PrimaryKey
 import java.util.Date
 
 @Entity(
@@ -47,7 +48,8 @@ import java.util.Date
     indices = [Index(value = ["category_id"])]
 )
 class Piece(
-    id: Long = 0,
+    @PrimaryKey(autoGenerate = true)
+    override val id: Long = 0,
     imageUrl: String,
     isFavorite: Boolean = false,
     createdAt: Date = Date(),
