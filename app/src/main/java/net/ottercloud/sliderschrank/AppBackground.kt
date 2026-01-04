@@ -32,7 +32,7 @@ import androidx.annotation.StringRes
 
 enum class AppBackground(val key: String, @param:StringRes val labelRes: Int) {
     CORK("cork", R.string.background_cork),
-    GRAY("grey", R.string.background_gray),
+    GRAY("gray", R.string.background_gray),
     WHITE("white", R.string.background_white),
     CHECKERED("checkerboard", R.string.background_checkered);
 
