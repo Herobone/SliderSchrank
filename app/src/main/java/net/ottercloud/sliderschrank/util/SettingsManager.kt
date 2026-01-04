@@ -26,33 +26,48 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank
+package net.ottercloud.sliderschrank.util
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
+import net.ottercloud.sliderschrank.AppBackground
+import net.ottercloud.sliderschrank.data.AppDatabase
 
-@Composable
-fun Closet(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Welcome to the closet!")
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+
+class SettingsManager(private val context: Context) {
+
+    private val dataStore = context.dataStore
+
+    companion object {
+        val BACKGROUND_KEY = stringPreferencesKey("background")
+    }
+
+    val background: Flow<AppBackground> = dataStore.data.map {
+        val key = it[BACKGROUND_KEY] ?: AppBackground.WHITE.key
+        AppBackground.fromKey(key)
+    }
+
+    suspend fun setBackground(background: AppBackground) {
+        dataStore.edit {
+            it[BACKGROUND_KEY] = background.key
         }
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-private fun ClosetPreview() {
-    SliderSchrankTheme {
-        Closet()
+    suspend fun clearData() {
+        dataStore.edit {
+            it.clear()
+        }
+        withContext(Dispatchers.IO) {
+            AppDatabase.getDatabase(context).clearAllTables()
+        }
     }
 }
