@@ -331,7 +331,7 @@ private fun FullscreenCameraView(onClose: () -> Unit, onSaveError: () -> Unit) {
         }
     }
 
-    // Initialize camera only once when previewView is available
+    // Initialize camera provider when previewView is available
     LaunchedEffect(previewView) {
         val view = previewView ?: return@LaunchedEffect
 
@@ -356,7 +356,6 @@ private fun FullscreenCameraView(onClose: () -> Unit, onSaveError: () -> Unit) {
                 val newImageCapture = ImageCapture.Builder()
                     .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                     .setResolutionSelector(resolutionSelector)
-                    .setFlashMode(ImageCapture.FLASH_MODE_OFF)
                     .build()
                 imageCapture = newImageCapture
 
@@ -512,11 +511,6 @@ private fun FullscreenCameraView(onClose: () -> Unit, onSaveError: () -> Unit) {
                     IconButton(
                         onClick = {
                             isFlashEnabled = !isFlashEnabled
-                            imageCapture?.flashMode = if (isFlashEnabled) {
-                                ImageCapture.FLASH_MODE_ON
-                            } else {
-                                ImageCapture.FLASH_MODE_OFF
-                            }
                         },
                         modifier = Modifier
                             .size(56.dp)
@@ -545,6 +539,12 @@ private fun FullscreenCameraView(onClose: () -> Unit, onSaveError: () -> Unit) {
                     IconButton(
                         onClick = {
                             imageCapture?.let { capture ->
+                                // Set flash mode right before capture
+                                capture.flashMode = if (isFlashEnabled) {
+                                    ImageCapture.FLASH_MODE_ON
+                                } else {
+                                    ImageCapture.FLASH_MODE_OFF
+                                }
                                 takePictureForPreview(
                                     context = context,
                                     imageCapture = capture,
