@@ -321,11 +321,13 @@ private fun FullscreenCameraView(onClose: () -> Unit, onSaveError: () -> Unit) {
     var isFlashEnabled by remember { mutableStateOf(false) }
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
+    var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
 
-    // Cleanup Bitmap when composable is disposed to prevent memory leak
+    // Cleanup Bitmap and Camera when composable is disposed to prevent memory/resource leak
     DisposableEffect(Unit) {
         onDispose {
             capturedBitmap?.recycle()
+            cameraProvider?.unbindAll()
         }
     }
 
@@ -336,7 +338,8 @@ private fun FullscreenCameraView(onClose: () -> Unit, onSaveError: () -> Unit) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
             try {
-                val cameraProvider = cameraProviderFuture.get()
+                val provider = cameraProviderFuture.get()
+                cameraProvider = provider
 
                 val resolutionSelector = ResolutionSelector.Builder()
                     .setAspectRatioStrategy(
@@ -359,8 +362,8 @@ private fun FullscreenCameraView(onClose: () -> Unit, onSaveError: () -> Unit) {
 
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
+                provider.unbindAll()
+                provider.bindToLifecycle(
                     lifecycleOwner,
                     cameraSelector,
                     preview,
