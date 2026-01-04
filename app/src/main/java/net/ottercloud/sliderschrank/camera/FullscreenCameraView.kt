@@ -325,7 +325,7 @@ private fun CameraCaptureContent(
         AndroidView(
             factory = { ctx ->
                 PreviewView(ctx).apply {
-                    implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                    implementationMode = PreviewView.ImplementationMode.PERFORMANCE
                     scaleType = PreviewView.ScaleType.FIT_CENTER
                 }.also { onPreviewViewCreate(it) }
             },
