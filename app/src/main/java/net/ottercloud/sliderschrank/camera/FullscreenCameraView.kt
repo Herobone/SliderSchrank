@@ -120,6 +120,7 @@ fun FullscreenCameraView(
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
+    var isCapturing by remember { mutableStateOf(false) }
 
     // Cleanup Bitmap and Camera when composable is disposed to prevent memory/resource leak
     DisposableEffect(Unit) {
@@ -219,8 +220,10 @@ fun FullscreenCameraView(
                     onPreviewViewCreate = { previewView = it },
                     isFlashEnabled = isFlashEnabled,
                     onFlashToggle = { isFlashEnabled = !isFlashEnabled },
+                    isCapturing = isCapturing,
                     onCapture = {
                         imageCapture?.let { capture ->
+                            isCapturing = true
                             capture.flashMode = if (isFlashEnabled) {
                                 ImageCapture.FLASH_MODE_ON
                             } else {
@@ -231,8 +234,12 @@ fun FullscreenCameraView(
                                 imageCapture = capture,
                                 onCaptured = { bitmap ->
                                     capturedBitmap = bitmap
+                                    isCapturing = false
                                 },
-                                onError = onCaptureError
+                                onError = {
+                                    isCapturing = false
+                                    onCaptureError()
+                                }
                             )
                         }
                     },
@@ -318,6 +325,7 @@ private fun CameraCaptureContent(
     onPreviewViewCreate: (PreviewView) -> Unit,
     isFlashEnabled: Boolean,
     onFlashToggle: () -> Unit,
+    isCapturing: Boolean,
     onCapture: () -> Unit,
     onClose: () -> Unit
 ) {
@@ -376,18 +384,25 @@ private fun CameraCaptureContent(
             // Capture Button
             IconButton(
                 onClick = onCapture,
+                enabled = !isCapturing,
                 modifier = Modifier
                     .size(80.dp)
-                    .background(color = Color.White, shape = CircleShape)
+                    .background(
+                        color = if (isCapturing) Color.Gray else Color.White,
+                        shape = CircleShape
+                    )
                     .padding(4.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Circle,
                     contentDescription = stringResource(R.string.take_picture),
-                    tint = Color.White,
+                    tint = if (isCapturing) Color.Gray else Color.White,
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(color = Color.White, shape = CircleShape)
+                        .background(
+                            color = if (isCapturing) Color.Gray else Color.White,
+                            shape = CircleShape
+                        )
                 )
             }
 
