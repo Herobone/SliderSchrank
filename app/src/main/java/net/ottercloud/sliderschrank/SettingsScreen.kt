@@ -56,6 +56,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +69,12 @@ import java.util.Locale
 import kotlinx.coroutines.launch
 import net.ottercloud.sliderschrank.util.SettingsManager
 
+private enum class ResetDialogState {
+    None,
+    First,
+    Second
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavController, modifier: Modifier = Modifier) {
@@ -79,8 +86,7 @@ fun SettingsScreen(navController: NavController, modifier: Modifier = Modifier) 
         initial = AppBackground.CORK
     )
 
-    var showResetDialog by remember { mutableStateOf(false) }
-    var showSecondResetDialog by remember { mutableStateOf(false) }
+    var resetDialogState by rememberSaveable { mutableStateOf(ResetDialogState.None) }
     var expanded by remember { mutableStateOf(false) }
 
     val languageOptions = AppLanguage.entries
@@ -205,60 +211,61 @@ fun SettingsScreen(navController: NavController, modifier: Modifier = Modifier) 
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Button(onClick = { showResetDialog = true }) {
+                Button(onClick = { resetDialogState = ResetDialogState.First }) {
                     Text(stringResource(R.string.reset_app_title))
-                }
-
-                if (showResetDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showResetDialog = false },
-                        title = { Text(stringResource(R.string.reset_app_title)) },
-                        text = {
-                            Text(stringResource(R.string.reset_data_confirmation))
-                        },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                showResetDialog = false
-                                showSecondResetDialog = true
-                            }) {
-                                Text(stringResource(R.string.reset))
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showResetDialog = false }) {
-                                Text(stringResource(R.string.cancel))
-                            }
-                        }
-                    )
-                }
-
-                if (showSecondResetDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showSecondResetDialog = false },
-                        title = { Text(stringResource(R.string.last_warning)) },
-                        text = {
-                            Text(
-                                stringResource(R.string.reset_data_confirmation_second)
-                            )
-                        },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                scope.launch {
-                                    settingsManager.clearData()
-                                }
-                                showSecondResetDialog = false
-                            }) {
-                                Text(stringResource(R.string.delete_everything))
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showSecondResetDialog = false }) {
-                                Text(stringResource(R.string.cancel))
-                            }
-                        }
-                    )
                 }
             }
         }
+    }
+
+    when (resetDialogState) {
+        ResetDialogState.First -> {
+            AlertDialog(
+                onDismissRequest = { resetDialogState = ResetDialogState.None },
+                title = { Text(stringResource(R.string.reset_app_title)) },
+                text = {
+                    Text(stringResource(R.string.reset_data_confirmation))
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        resetDialogState = ResetDialogState.Second
+                    }) {
+                        Text(stringResource(R.string.reset))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { resetDialogState = ResetDialogState.None }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
+        ResetDialogState.Second -> {
+            AlertDialog(
+                onDismissRequest = { resetDialogState = ResetDialogState.None },
+                title = { Text(stringResource(R.string.last_warning)) },
+                text = {
+                    Text(
+                        stringResource(R.string.reset_data_confirmation_second)
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        scope.launch {
+                            settingsManager.clearData()
+                        }
+                        resetDialogState = ResetDialogState.None
+                    }) {
+                        Text(stringResource(R.string.delete_everything))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { resetDialogState = ResetDialogState.None }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
+        ResetDialogState.None -> { /* No dialog */ }
     }
 }
