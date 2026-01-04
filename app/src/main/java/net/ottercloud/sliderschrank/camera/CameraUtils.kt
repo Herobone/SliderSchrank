@@ -40,6 +40,10 @@ import androidx.camera.core.ImageProxy
 import androidx.core.content.ContextCompat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraUtils"
 
@@ -54,9 +58,16 @@ fun takePictureForPreview(
         object : ImageCapture.OnImageCapturedCallback() {
             override fun onCaptureSuccess(image: ImageProxy) {
                 val bitmap = image.toBitmap()
-                val rotatedBitmap = rotateBitmap(bitmap, image.imageInfo.rotationDegrees)
+                val rotationDegrees = image.imageInfo.rotationDegrees
                 image.close()
-                onCaptured(rotatedBitmap)
+
+                // Offload bitmap rotation to background thread to avoid UI jank
+                CoroutineScope(Dispatchers.Default).launch {
+                    val rotatedBitmap = rotateBitmap(bitmap, rotationDegrees)
+                    withContext(Dispatchers.Main) {
+                        onCaptured(rotatedBitmap)
+                    }
+                }
             }
 
             override fun onError(exception: ImageCaptureException) {
