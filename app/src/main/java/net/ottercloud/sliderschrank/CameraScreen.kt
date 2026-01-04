@@ -468,7 +468,11 @@ private fun FullscreenCameraView(onClose: () -> Unit, onSaveError: () -> Unit) {
 
                 // Close Button (top right)
                 CloseButton(
-                    onClick = onClose,
+                    onClick = {
+                        capturedBitmap?.recycle()
+                        capturedBitmap = null
+                        onClose()
+                    },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(16.dp)
