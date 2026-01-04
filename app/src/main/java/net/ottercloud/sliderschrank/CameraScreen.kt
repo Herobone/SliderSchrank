@@ -643,11 +643,17 @@ private fun saveBitmapToMediaStore(
         )
 
         if (uri != null) {
-            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+            val success = context.contentResolver.openOutputStream(uri)?.use { outputStream ->
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream)
+            } ?: false
+            if (success) {
+                Log.i(TAG, "Camera saved Image to: $uri")
+                onSuccess()
+            } else {
+                Log.e(TAG, "Failed to compress bitmap")
+                context.contentResolver.delete(uri, null, null)
+                onError()
             }
-            Log.i(TAG, "Camera saved Image to: $uri")
-            onSuccess()
         } else {
             Log.e(TAG, "Failed to create MediaStore entry")
             onError()
