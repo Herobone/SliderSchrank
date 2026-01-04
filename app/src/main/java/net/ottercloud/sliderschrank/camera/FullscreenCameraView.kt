@@ -83,7 +83,7 @@ import net.ottercloud.sliderschrank.ui.theme.KeepGreen
 private const val TAG = "FullscreenCameraView"
 
 @Composable
-internal fun CloseButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun CloseButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     IconButton(
         onClick = onClick,
         modifier = modifier
