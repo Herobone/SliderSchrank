@@ -142,9 +142,8 @@ private fun rememberHomeScreenState(
 fun HomeScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager(context) }
-    val background by settingsManager.background.collectAsState(initial = AppBackground.CORK)
+    val background by settingsManager.background.collectAsState(initial = AppBackground.WHITE)
 
-    rememberCoroutineScope()
     val state = rememberHomeScreenState()
 
     val scope = rememberCoroutineScope()
