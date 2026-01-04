@@ -28,15 +28,22 @@
  */
 package net.ottercloud.sliderschrank.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.Date
 
 @Entity(tableName = "outfits")
-class Outfit(
+data class Outfit(
     @PrimaryKey(autoGenerate = true)
     override val id: Long = 0,
-    imageUrl: String,
-    isFavorite: Boolean = false,
-    createdAt: Date = Date()
-) : AbstractClothing(id, imageUrl, isFavorite, createdAt)
+
+    @ColumnInfo(name = "image_url")
+    override val imageUrl: String,
+
+    @ColumnInfo(name = "is_favorite")
+    override val isFavorite: Boolean = false,
+
+    @ColumnInfo(name = "created_at")
+    override val createdAt: Date = Date()
+) : AbstractClothing()
