@@ -82,6 +82,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -133,6 +134,8 @@ fun CameraScreen(modifier: Modifier = Modifier) {
     var showPermissionDeniedDialog by remember { mutableStateOf(false) }
     var showPermissionPermanentlyDeniedDialog by remember { mutableStateOf(false) }
     var showSaveErrorDialog by remember { mutableStateOf(false) }
+    var showCameraInitErrorDialog by remember { mutableStateOf(false) }
+    var showCaptureErrorDialog by remember { mutableStateOf(false) }
     var showFullscreenCamera by remember { mutableStateOf(false) }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
@@ -202,11 +205,44 @@ fun CameraScreen(modifier: Modifier = Modifier) {
         )
     }
 
+    // Camera Initialization Error Dialog
+    if (showCameraInitErrorDialog) {
+        AlertDialog(
+            onDismissRequest = { showCameraInitErrorDialog = false },
+            title = { Text(stringResource(R.string.camera_initialization_failed)) },
+            text = { Text(stringResource(R.string.camera_initialization_failed_message)) },
+            confirmButton = {
+                TextButton(onClick = { showCameraInitErrorDialog = false }) {
+                    Text(stringResource(R.string.ok))
+                }
+            }
+        )
+    }
+
+    // Image Capture Error Dialog
+    if (showCaptureErrorDialog) {
+        AlertDialog(
+            onDismissRequest = { showCaptureErrorDialog = false },
+            title = { Text(stringResource(R.string.image_capture_failed)) },
+            text = { Text(stringResource(R.string.image_capture_failed_message)) },
+            confirmButton = {
+                TextButton(onClick = { showCaptureErrorDialog = false }) {
+                    Text(stringResource(R.string.ok))
+                }
+            }
+        )
+    }
+
     // Fullscreen Camera Dialog
     if (showFullscreenCamera) {
         FullscreenCameraView(
             onClose = { showFullscreenCamera = false },
-            onSaveError = { showSaveErrorDialog = true }
+            onSaveError = { showSaveErrorDialog = true },
+            onCameraInitError = {
+                showFullscreenCamera = false
+                showCameraInitErrorDialog = true
+            },
+            onCaptureError = { showCaptureErrorDialog = true }
         )
     }
 
@@ -313,9 +349,17 @@ fun CameraScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun FullscreenCameraView(onClose: () -> Unit, onSaveError: () -> Unit) {
+private fun FullscreenCameraView(
+    onClose: () -> Unit,
+    onSaveError: () -> Unit,
+    onCameraInitError: () -> Unit,
+    onCaptureError: () -> Unit
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Use rememberUpdatedState to ensure LaunchedEffect always has the latest callback reference
+    val currentOnCameraInitError by rememberUpdatedState(onCameraInitError)
 
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var isFlashEnabled by remember { mutableStateOf(false) }
@@ -370,6 +414,7 @@ private fun FullscreenCameraView(onClose: () -> Unit, onSaveError: () -> Unit) {
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Camera initialization failed", e)
+                currentOnCameraInitError()
             }
         }, ContextCompat.getMainExecutor(context))
     }
@@ -551,7 +596,7 @@ private fun FullscreenCameraView(onClose: () -> Unit, onSaveError: () -> Unit) {
                                     onCaptured = { bitmap ->
                                         capturedBitmap = bitmap
                                     },
-                                    onError = onSaveError
+                                    onError = onCaptureError
                                 )
                             }
                         },

@@ -23,4 +23,8 @@
     <string name="cancel">Cancel</string>
     <string name="keep_photo">Keep photo</string>
     <string name="retake_photo">Retake photo</string>
+    <string name="camera_initialization_failed">Camera initialization failed</string>
+    <string name="camera_initialization_failed_message">The camera could not be started. Please try again or restart the app.</string>
+    <string name="image_capture_failed">Image capture failed</string>
+    <string name="image_capture_failed_message">The photo could not be taken. Please try again.</string>
 </resources>
