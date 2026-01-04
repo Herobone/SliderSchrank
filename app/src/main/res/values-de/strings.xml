@@ -13,7 +13,7 @@
     <string name="camera_permission_denied">Kamera-Berechtigung abgelehnt</string>
     <string name="camera_permission_denied_message">Der Kamera-Zugriff wurde abgelehnt. Diese Funktion ist ohne Kamera-Berechtigung nicht verfügbar.</string>
     <string name="image_save_failed">Bild konnte nicht gespeichert werden</string>
-    <string name="image_save_failed_message">Das Bild konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.</string>
+    <string name="image_save_failed_message">Das Bild konnte nicht gespeichert werden. Bitte versuche es erneut.</string>
     <string name="ok">OK</string>
     <string name="flash_on">Blitz an</string>
     <string name="flash_off">Blitz aus</string>
