@@ -8,4 +8,23 @@
     <string name="random_outfit">Random Outfit</string>
     <string name="save_outfit">Save Outfit</string>
     <string name="lock_item">Lock item</string>
+    <string name="back">Back</string>
+    <string name="background_cork">Cork</string>
+    <string name="background_gray">Gray</string>
+    <string name="background_white">White</string>
+    <string name="background_checkered">Checkered</string>
+    <string name="background_setting_title">Background</string>
+    <string name="language_setting_title">Language</string>
+    <string name="language_english">English</string>
+    <string name="language_german">German</string>
+    <string name="reset_data">Reset Data</string>
+    <string name="reset_data_confirmation">Are you sure you want to reset all data?</string>
+    <string name="reset_data_confirmation_second">Really sure? This cannot be undone.</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="reset_app_title">Reset App?</string>
+    <string name="last_warning">Last Warning</string>
+    <string name="cancel">Cancel</string>
+    <string name="reset">Reset</string>
+    <string name="delete_everything">Yes, delete everything</string>
 </resources>

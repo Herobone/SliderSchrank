@@ -28,31 +28,30 @@
  */
 package net.ottercloud.sliderschrank
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 
 @Composable
-fun Closet(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Welcome to the closet!")
+fun CheckedBackground(modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier.fillMaxSize()) {
+        val squareSize = 35f
+        val numCols = (size.width / squareSize).toInt() + 1
+        val numRows = (size.height / squareSize).toInt() + 1
+
+        for (row in 0 until numRows) {
+            for (col in 0 until numCols) {
+                val color = if ((row + col) % 2 == 0) Color.White else Color.LightGray
+                drawRect(
+                    color = color,
+                    topLeft = Offset(col * squareSize, row * squareSize),
+                    size = Size(squareSize, squareSize)
+                )
+            }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ClosetPreview() {
-    SliderSchrankTheme {
-        Closet()
     }
 }

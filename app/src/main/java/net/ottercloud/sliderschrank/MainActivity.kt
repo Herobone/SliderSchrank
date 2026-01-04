@@ -29,14 +29,15 @@
 package net.ottercloud.sliderschrank
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.StringRes
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraEnhance
 import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Home
@@ -60,7 +61,7 @@ import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -81,7 +82,7 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
     NavigationSuiteScaffold(
         modifier = modifier,
         navigationSuiteItems = {
-            AppDestinations.entries.forEach { destination ->
+            AppDestinations.entries.filter { it.navigatorVisible }.forEach { destination ->
                 item(
                     icon = {
                         Icon(
@@ -103,10 +104,27 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
                     TopAppBar(
                         title = { Text(stringResource(R.string.closet)) },
                         actions = {
-                            IconButton(onClick = { }) {
+                            IconButton(onClick = {
+                                currentDestination = AppDestinations.SETTINGS
+                            }) {
                                 Icon(
                                     imageVector = Icons.Default.Settings,
                                     contentDescription = stringResource(R.string.settings)
+                                )
+                            }
+                        }
+                    )
+                } else if (currentDestination == AppDestinations.SETTINGS) {
+                    TopAppBar(
+                        title = { Text(stringResource(R.string.settings)) },
+                        navigationIcon = {
+                            IconButton(onClick = {
+                                currentDestination =
+                                    AppDestinations.CLOSET
+                            }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.back)
                                 )
                             }
                         }
@@ -120,13 +138,19 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
                 AppDestinations.HOME -> HomeScreen(modifier = contentModifier)
                 AppDestinations.CAMERA -> CameraScreen(modifier = contentModifier)
                 AppDestinations.CLOSET -> Closet(modifier = contentModifier)
+                AppDestinations.SETTINGS -> SettingsScreen(modifier = contentModifier)
             }
         }
     }
 }
 
-enum class AppDestinations(@param:StringRes val labelRes: Int, val icon: ImageVector) {
+enum class AppDestinations(
+    @param:StringRes val labelRes: Int,
+    val icon: ImageVector,
+    val navigatorVisible: Boolean = true
+) {
     HOME(R.string.home, Icons.Default.Home),
     CAMERA(R.string.camera, Icons.Filled.CameraEnhance),
-    CLOSET(R.string.closet, Icons.Filled.Checkroom)
+    CLOSET(R.string.closet, Icons.Filled.Checkroom),
+    SETTINGS(R.string.settings, Icons.Default.Settings, navigatorVisible = false)
 }
