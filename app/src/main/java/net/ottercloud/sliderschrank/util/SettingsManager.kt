@@ -52,7 +52,7 @@ class SettingsManager(private val context: Context) {
     }
 
     val background: Flow<AppBackground> = dataStore.data.map {
-        val key = it[BACKGROUND_KEY] ?: AppBackground.CORK.key
+        val key = it[BACKGROUND_KEY] ?: AppBackground.WHITE.key
         AppBackground.fromKey(key)
     }
 
