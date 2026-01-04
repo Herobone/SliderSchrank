@@ -39,7 +39,6 @@
     <string name="close">Close</string>
     <string name="camera_permission_permanently_denied_message">Camera permission was permanently denied. Please enable it in the app settings.</string>
     <string name="open_settings">Open Settings</string>
-    <string name="cancel">Cancel</string>
     <string name="keep_photo">Keep photo</string>
     <string name="retake_photo">Retake photo</string>
     <string name="camera_initialization_failed">Camera initialization failed</string>
