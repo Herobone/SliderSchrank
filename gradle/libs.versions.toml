@@ -15,7 +15,6 @@ navigationCompose = "2.9.6"
 room = "2.8.4"
 ksp = "2.3.0"
 camerax = "1.4.1"
-accompanistPermissions = "0.36.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
