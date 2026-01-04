@@ -30,6 +30,7 @@ package net.ottercloud.sliderschrank
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -55,6 +56,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -63,13 +65,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 import net.ottercloud.sliderschrank.util.LikeUtil
+import net.ottercloud.sliderschrank.util.SettingsManager
 
 private val categoryOrder = listOf(
     GarmentType.HEAD,
@@ -123,6 +128,7 @@ private fun rememberHomeScreenState(
         rememberPagerState(pageCount = { garmentsForCategory.size })
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     return remember(groupedGarments, pagerStates) {
         HomeScreenState(
             groupedGarments = groupedGarments,
@@ -134,6 +140,10 @@ private fun rememberHomeScreenState(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val settingsManager = remember { SettingsManager(context) }
+    val background by settingsManager.background.collectAsState(initial = AppBackground.WHITE)
+
     val state = rememberHomeScreenState()
 
     val scope = rememberCoroutineScope()
@@ -150,46 +160,79 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             }
         }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-    ) {
-        HomeScreenTopBar(
-            isOutfitSaved = state.isCurrentOutfitSaved,
-            onShuffleClick = onShuffleClick,
-            onFavoriteClick = state::onFavoriteClick
-        )
+    Box(modifier = modifier.fillMaxSize()) {
+        when (background) {
+            AppBackground.CORK -> {
+                Image(
+                    painter = painterResource(id = R.drawable.kork),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            AppBackground.GRAY -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Gray)
+                )
+            }
+
+            AppBackground.WHITE -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White)
+                )
+            }
+
+            AppBackground.CHECKERED -> {
+                CheckedBackground(modifier = Modifier.fillMaxSize())
+            }
+        }
 
         Column(
             modifier = Modifier
-                .fillMaxHeight(),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .statusBarsPadding()
         ) {
-            categoryOrder.forEach { category ->
-                val garmentsForCategory = state.groupedGarments[category].orEmpty()
-                val pagerState = state.pagerStates[category]
-                val weight = when (category) {
-                    GarmentType.HEAD, GarmentType.FEET -> 0.2f
-                    else -> 0.3f
-                }
+            HomeScreenTopBar(
+                isOutfitSaved = state.isCurrentOutfitSaved,
+                onShuffleClick = onShuffleClick,
+                onFavoriteClick = state::onFavoriteClick
+            )
 
-                if (garmentsForCategory.isNotEmpty() && pagerState != null) {
-                    val currentGarment =
-                        garmentsForCategory.getOrNull(pagerState.currentPage)
-                    val isCurrentItemLocked = currentGarment?.id in state.lockedGarmentIds
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                categoryOrder.forEach { category ->
+                    val garmentsForCategory = state.groupedGarments[category].orEmpty()
+                    val pagerState = state.pagerStates[category]
+                    val weight = when (category) {
+                        GarmentType.HEAD, GarmentType.FEET -> 0.2f
+                        else -> 0.3f
+                    }
 
-                    GarmentSlider(
-                        garments = garmentsForCategory,
-                        pagerState = pagerState,
-                        isSwipeEnabled = !isCurrentItemLocked,
-                        lockedGarmentIds = state.lockedGarmentIds,
-                        onLockClick = state::onLockClick,
-                        onGarmentClick = state::onGarmentClick,
-                        modifier = Modifier
-                            .weight(weight)
-                            .fillMaxWidth()
-                    )
+                    if (garmentsForCategory.isNotEmpty() && pagerState != null) {
+                        val currentGarment =
+                            garmentsForCategory.getOrNull(pagerState.currentPage)
+                        val isCurrentItemLocked = currentGarment?.id in state.lockedGarmentIds
+
+                        GarmentSlider(
+                            garments = garmentsForCategory,
+                            pagerState = pagerState,
+                            isSwipeEnabled = !isCurrentItemLocked,
+                            lockedGarmentIds = state.lockedGarmentIds,
+                            onLockClick = state::onLockClick,
+                            onGarmentClick = state::onGarmentClick,
+                            modifier = Modifier
+                                .weight(weight)
+                                .fillMaxWidth()
+                        )
+                    }
                 }
             }
         }
