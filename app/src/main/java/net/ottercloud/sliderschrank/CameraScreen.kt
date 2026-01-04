@@ -82,7 +82,21 @@ fun CameraScreen(modifier: Modifier = Modifier) {
         if (granted) {
             showFullscreenCamera = true
         } else {
-            showPermissionDeniedDialog = true
+            // After denial, check if we should show rationale
+            // If shouldShowRequestPermissionRationale returns false after a denial,
+            // the user has permanently denied the permission
+            val activity = context as? android.app.Activity
+            val shouldShowRationale = activity?.shouldShowRequestPermissionRationale(
+                Manifest.permission.CAMERA
+            ) ?: false
+
+            if (shouldShowRationale) {
+                // User denied but can still be asked again
+                showPermissionDeniedDialog = true
+            } else {
+                // User selected "Don't ask again" or permanently denied
+                showPermissionPermanentlyDeniedDialog = true
+            }
         }
     }
 
@@ -163,33 +177,40 @@ fun CameraScreen(modifier: Modifier = Modifier) {
                     ) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
                     if (hasPermission) {
-                        context.getSharedPreferences("camera_prefs", Context.MODE_PRIVATE)
-                            .edit { putBoolean("camera_permission_asked", false) }
                         showFullscreenCamera = true
                     } else {
-                        val prefs = context.getSharedPreferences(
-                            "camera_prefs",
-                            Context.MODE_PRIVATE
-                        )
-                        val hasAskedBefore = prefs.getBoolean(
-                            "camera_permission_asked",
-                            false
-                        )
-                        if (!hasAskedBefore) {
-                            prefs.edit {
-                                putBoolean("camera_permission_asked", true)
-                            }
+                        // Check shouldShowRequestPermissionRationale before requesting
+                        // This returns false if: 1) never asked before, or 2) permanently denied
+                        val activity = context as? android.app.Activity
+                        val shouldShowRationale = activity?.shouldShowRequestPermissionRationale(
+                            Manifest.permission.CAMERA
+                        ) ?: false
+
+                        if (shouldShowRationale) {
+                            // User denied before but didn't select "Don't ask again"
+                            // We can still show the permission request
                             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                         } else {
-                            val activity = context as? android.app.Activity
-                            val shouldShowRationale =
-                                activity?.shouldShowRequestPermissionRationale(
-                                    Manifest.permission.CAMERA
-                                ) ?: false
+                            // Either: 1) First time asking, or 2) Permanently denied
+                            // We need to track if we've asked before to distinguish these cases
+                            val prefs = context.getSharedPreferences(
+                                "camera_prefs",
+                                Context.MODE_PRIVATE
+                            )
+                            val hasAskedBefore = prefs.getBoolean(
+                                "camera_permission_asked",
+                                false
+                            )
 
-                            if (shouldShowRationale) {
+                            if (!hasAskedBefore) {
+                                // First time - set flag and launch permission request
+                                prefs.edit {
+                                    putBoolean("camera_permission_asked", true)
+                                }
                                 cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                             } else {
+                                // We've asked before and shouldShowRationale is false
+                                // This means permission is permanently denied
                                 showPermissionPermanentlyDeniedDialog = true
                             }
                         }
