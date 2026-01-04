@@ -38,6 +38,8 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -97,10 +99,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
-import com.google.accompanist.permissions.shouldShowRationale
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
@@ -127,7 +125,6 @@ private fun CloseButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -137,10 +134,16 @@ fun CameraScreen(modifier: Modifier = Modifier) {
     var showSaveErrorDialog by remember { mutableStateOf(false) }
     var showFullscreenCamera by remember { mutableStateOf(false) }
 
-    val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA) { granted ->
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
         if (granted) {
             showFullscreenCamera = true
         } else {
+            // User denied the permission request.
+            // We only get here if we actually launched the permission dialog (checked in button handler).
+            // Show simple denied dialog - if user selects "Don't ask again", the next button click
+            // will detect this via shouldShowRationale and show the settings dialog instead.
             showPermissionDeniedDialog = true
         }
     }
@@ -239,35 +242,48 @@ fun CameraScreen(modifier: Modifier = Modifier) {
         ) {
             Button(
                 onClick = {
-                    when {
-                        cameraPermissionState.status.isGranted -> {
-                            showFullscreenCamera = true
-                        }
-                        cameraPermissionState.status.shouldShowRationale -> {
-                            // User denied once, can still ask again
-                            cameraPermissionState.launchPermissionRequest()
-                        }
-                        else -> {
-                            // Permission not granted and shouldShowRationale is false
-                            // This means either first request or permanently denied
-                            val prefs = context.getSharedPreferences(
-                                "camera_prefs",
-                                Context.MODE_PRIVATE
-                            )
-                            val hasAskedBefore = prefs.getBoolean(
-                                "camera_permission_asked",
-                                false
-                            )
+                    // Check if permission is already granted
+                    val hasPermission = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.CAMERA
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
-                            if (hasAskedBefore) {
+                    if (hasPermission) {
+                        // Permission granted - reset the tracking flag so the normal flow works
+                        // again if the user later revokes the permission in system settings
+                        context.getSharedPreferences("camera_prefs", Context.MODE_PRIVATE)
+                            .edit { putBoolean("camera_permission_asked", false) }
+                        showFullscreenCamera = true
+                    } else {
+                        // Permission not granted - check if we can still ask
+                        val prefs = context.getSharedPreferences(
+                            "camera_prefs",
+                            Context.MODE_PRIVATE
+                        )
+                        val hasAskedBefore = prefs.getBoolean(
+                            "camera_permission_asked",
+                            false
+                        )
+                        if (!hasAskedBefore) {
+                            // First time asking -> set flag and launch permission request
+                            prefs.edit {
+                                putBoolean("camera_permission_asked", true)
+                            }
+                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        } else {
+                            // Already asked before - check if we can ask again
+                            val activity = context as? android.app.Activity
+                            val shouldShowRationale =
+                                activity?.shouldShowRequestPermissionRationale(
+                                    Manifest.permission.CAMERA
+                                ) ?: false
+
+                            if (shouldShowRationale) {
+                                // User denied once, can still ask again
+                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            } else {
                                 // Permanently denied -> show settings dialog
                                 showPermissionPermanentlyDeniedDialog = true
-                            } else {
-                                // First time asking
-                                prefs.edit {
-                                    putBoolean("camera_permission_asked", true)
-                                }
-                                cameraPermissionState.launchPermissionRequest()
                             }
                         }
                     }
