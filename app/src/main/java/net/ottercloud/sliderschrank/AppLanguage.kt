@@ -28,31 +28,13 @@
  */
 package net.ottercloud.sliderschrank
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import androidx.annotation.StringRes
 
-@Composable
-fun Closet(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Welcome to the closet!")
-        }
-    }
-}
+enum class AppLanguage(val code: String, @param:StringRes val labelRes: Int) {
+    ENGLISH("en", R.string.language_english),
+    GERMAN("de", R.string.language_german);
 
-@Preview(showBackground = true)
-@Composable
-private fun ClosetPreview() {
-    SliderSchrankTheme {
-        Closet()
+    companion object {
+        fun fromCode(code: String): AppLanguage = entries.find { it.code == code } ?: ENGLISH
     }
 }
