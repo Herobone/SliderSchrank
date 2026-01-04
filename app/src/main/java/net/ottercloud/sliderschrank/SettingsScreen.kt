@@ -34,6 +34,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
@@ -41,9 +43,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -57,13 +63,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
+import androidx.navigation.NavController
 import java.util.Locale
 import kotlinx.coroutines.launch
 import net.ottercloud.sliderschrank.util.SettingsManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(modifier: Modifier = Modifier) {
+fun SettingsScreen(navController: NavController, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager(context) }
     val scope = rememberCoroutineScope()
@@ -89,131 +96,169 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
     }
     var languageExpanded by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.settings)) },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        navController.navigateUp()
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
+                        )
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(stringResource(R.string.language_setting_title))
-            ExposedDropdownMenuBox(expanded = languageExpanded, onExpandedChange = {
-                languageExpanded = !languageExpanded
-            }) {
-                TextField(
-                    value = stringResource(currentLanguage.labelRes),
-                    onValueChange = {},
-                    readOnly = true,
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = languageExpanded)
-                    },
-                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                )
-                ExposedDropdownMenu(expanded = languageExpanded, onDismissRequest = {
-                    languageExpanded =
-                        false
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(stringResource(R.string.language_setting_title))
+                ExposedDropdownMenuBox(expanded = languageExpanded, onExpandedChange = {
+                    languageExpanded = !languageExpanded
                 }) {
-                    languageOptions.forEach { selectionOption ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(selectionOption.labelRes)) },
-                            onClick = {
-                                val appLocale: LocaleListCompat = LocaleListCompat.forLanguageTags(
-                                    selectionOption.code
-                                )
-                                AppCompatDelegate.setApplicationLocales(appLocale)
-                                languageExpanded = false
-                            }
+                    TextField(
+                        value = stringResource(currentLanguage.labelRes),
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = languageExpanded)
+                        },
+                        modifier = Modifier.menuAnchor(
+                            ExposedDropdownMenuAnchorType.PrimaryNotEditable
                         )
-                    }
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(stringResource(R.string.background_setting_title))
-            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = {
-                expanded = !expanded
-            }) {
-                TextField(
-                    value = stringResource(currentBackground.labelRes),
-                    onValueChange = {},
-                    readOnly = true,
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                    },
-                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                )
-                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    backgroundOptions.forEach { selectionOption ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(selectionOption.labelRes)) },
-                            onClick = {
-                                scope.launch {
-                                    settingsManager.setBackground(selectionOption)
-                                }
-                                expanded = false
-                            }
-                        )
-                    }
-                }
-            }
-        }
-
-        Button(onClick = { showResetDialog = true }) {
-            Text(stringResource(R.string.reset_app_title))
-        }
-
-        if (showResetDialog) {
-            AlertDialog(
-                onDismissRequest = { showResetDialog = false },
-                title = { Text(stringResource(R.string.reset_app_title)) },
-                text = {
-                    Text(stringResource(R.string.reset_data_confirmation))
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        showResetDialog = false
-                        showSecondResetDialog = true
-                    }) {
-                        Text(stringResource(R.string.reset))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showResetDialog = false }) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                }
-            )
-        }
-
-        if (showSecondResetDialog) {
-            AlertDialog(
-                onDismissRequest = { showSecondResetDialog = false },
-                title = { Text(stringResource(R.string.last_warning)) },
-                text = {
-                    Text(
-                        stringResource(R.string.reset_data_confirmation_second)
                     )
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        scope.launch {
-                            settingsManager.clearData()
-                        }
-                        showSecondResetDialog = false
+                    ExposedDropdownMenu(expanded = languageExpanded, onDismissRequest = {
+                        languageExpanded =
+                            false
                     }) {
-                        Text(stringResource(R.string.delete_everything))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showSecondResetDialog = false }) {
-                        Text(stringResource(R.string.cancel))
+                        languageOptions.forEach { selectionOption ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(selectionOption.labelRes)) },
+                                onClick = {
+                                    val appLocale: LocaleListCompat =
+                                        LocaleListCompat.forLanguageTags(
+                                            selectionOption.code
+                                        )
+                                    AppCompatDelegate.setApplicationLocales(appLocale)
+                                    languageExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
-            )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(stringResource(R.string.background_setting_title))
+                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = {
+                    expanded = !expanded
+                }) {
+                    TextField(
+                        value = stringResource(currentBackground.labelRes),
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                        },
+                        modifier = Modifier.menuAnchor(
+                            ExposedDropdownMenuAnchorType.PrimaryNotEditable
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        backgroundOptions.forEach { selectionOption ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(selectionOption.labelRes)) },
+                                onClick = {
+                                    scope.launch {
+                                        settingsManager.setBackground(selectionOption)
+                                    }
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Button(onClick = { showResetDialog = true }) {
+                    Text(stringResource(R.string.reset_app_title))
+                }
+
+                if (showResetDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showResetDialog = false },
+                        title = { Text(stringResource(R.string.reset_app_title)) },
+                        text = {
+                            Text(stringResource(R.string.reset_data_confirmation))
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showResetDialog = false
+                                showSecondResetDialog = true
+                            }) {
+                                Text(stringResource(R.string.reset))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showResetDialog = false }) {
+                                Text(stringResource(R.string.cancel))
+                            }
+                        }
+                    )
+                }
+
+                if (showSecondResetDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showSecondResetDialog = false },
+                        title = { Text(stringResource(R.string.last_warning)) },
+                        text = {
+                            Text(
+                                stringResource(R.string.reset_data_confirmation_second)
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                scope.launch {
+                                    settingsManager.clearData()
+                                }
+                                showSecondResetDialog = false
+                            }) {
+                                Text(stringResource(R.string.delete_everything))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showSecondResetDialog = false }) {
+                                Text(stringResource(R.string.cancel))
+                            }
+                        }
+                    )
+                }
+            }
         }
     }
 }

@@ -28,68 +28,52 @@
  */
 package net.ottercloud.sliderschrank
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
-import net.ottercloud.sliderschrank.util.SettingsManager
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Closet(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val settingsManager = remember { SettingsManager(context) }
-    val background by settingsManager.background.collectAsState(initial = AppBackground.CORK)
-
-    Box(modifier = modifier.fillMaxSize()) {
-        when (background) {
-            AppBackground.CORK -> {
-                Image(
-                    painter = painterResource(id = R.drawable.kork),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
-
-            AppBackground.GRAY -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Gray)
-                )
-            }
-
-            AppBackground.WHITE -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.White)
-                )
-            }
-
-            AppBackground.CHECKERED -> {
-                CheckedBackground(modifier = Modifier.fillMaxSize())
-            }
+fun Closet(navController: NavController, modifier: Modifier = Modifier) {
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.closet)) },
+                actions = {
+                    IconButton(onClick = {
+                        navController.navigate(AppDestinations.SETTINGS.name)
+                    }) {
+                        Icon(
+                            imageVector = AppDestinations.SETTINGS.icon,
+                            contentDescription = stringResource(R.string.settings)
+                        )
+                    }
+                }
+            )
         }
-
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Welcome to the closet!")
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Welcome to the closet!")
+            }
         }
     }
 }
@@ -98,6 +82,6 @@ fun Closet(modifier: Modifier = Modifier) {
 @Composable
 private fun ClosetPreview() {
     SliderSchrankTheme {
-        Closet()
+        Closet(navController = rememberNavController())
     }
 }
