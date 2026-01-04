@@ -29,21 +29,95 @@
 package net.ottercloud.sliderschrank
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.launch
+import net.ottercloud.sliderschrank.data.AppDatabase
+import net.ottercloud.sliderschrank.ui.FilteredView
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import net.ottercloud.sliderschrank.util.DummyDataGenerator
 
 @Composable
 fun Closet(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("Welcome to the closet!")
+    val context = LocalContext.current
+    val database = remember { AppDatabase.getDatabase(context) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        DummyDataGenerator.generateDummyData(context, database)
+    }
+
+    val pieces by database.pieceDao().getAllPiecesWithDetails().collectAsState(
+        initial = emptyList()
+    )
+    val outfits by database.outfitDao().getAllOutfitsWithPieces().collectAsState(
+        initial = emptyList()
+    )
+
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Clothes", "Outfits")
+
+    Column(modifier = modifier.fillMaxSize()) {
+        PrimaryTabRow(selectedTabIndex = selectedTabIndex) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTabIndex == index,
+                    onClick = { selectedTabIndex = index },
+                    text = { Text(title) }
+                )
+            }
+        }
+
+        when (selectedTabIndex) {
+            0 -> FilteredView(
+                items = pieces,
+                imageUrlProvider = { it.piece.imageUrl },
+                tagProvider = { it.tags.map { tag -> tag.name } },
+                onItemClick = { /* Handle click */ },
+                isFavoriteProvider = { it.piece.isFavorite },
+                onFavoriteClick = { pieceWithDetails ->
+                    scope.launch {
+                        val updatedPiece = pieceWithDetails.piece.copy(
+                            isFavorite = !pieceWithDetails.piece.isFavorite
+                        )
+                        database.pieceDao().updatePiece(updatedPiece)
+                    }
+                },
+                categoryProvider = { it.category?.name },
+                slotProvider = { it.piece.slot }
+            )
+            1 -> FilteredView(
+                items = outfits,
+                imageUrlProvider = { it.outfit.imageUrl },
+                tagProvider = { it.tags.map { tag -> tag.name } },
+                onItemClick = { /* Handle click */ },
+                isFavoriteProvider = { it.outfit.isFavorite },
+                onFavoriteClick = { outfitWithPieces ->
+                    scope.launch {
+                        val updatedOutfit = outfitWithPieces.outfit.copy(
+                            isFavorite = !outfitWithPieces.outfit.isFavorite
+                        )
+                        database.outfitDao().updateOutfit(updatedOutfit)
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -51,6 +125,9 @@ fun Closet(modifier: Modifier = Modifier) {
 @Composable
 private fun ClosetPreview() {
     SliderSchrankTheme {
-        Closet()
+        // Preview won't work well with DB access, but keeping it for structure
+        Box(Modifier.fillMaxSize()) {
+            Text("Closet Preview")
+        }
     }
 }
