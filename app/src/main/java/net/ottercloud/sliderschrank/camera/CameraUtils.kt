@@ -50,6 +50,7 @@ private const val TAG = "CameraUtils"
 fun takePictureForPreview(
     context: Context,
     imageCapture: ImageCapture,
+    scope: CoroutineScope,
     onCaptured: (Bitmap) -> Unit,
     onError: () -> Unit
 ) {
@@ -62,7 +63,9 @@ fun takePictureForPreview(
                 image.close()
 
                 // Offload bitmap rotation to background thread to avoid UI jank
-                CoroutineScope(Dispatchers.Default).launch {
+                // Uses the provided lifecycle-aware scope to automatically cancel
+                // if the composable is disposed
+                scope.launch(Dispatchers.Default) {
                     val rotatedBitmap = rotateBitmap(bitmap, rotationDegrees)
                     withContext(Dispatchers.Main) {
                         onCaptured(rotatedBitmap)
