@@ -101,6 +101,7 @@ import androidx.core.content.edit
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import net.ottercloud.sliderschrank.ui.theme.KeepGreen
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 
 private const val TAG = "CameraScreen"
@@ -456,7 +457,7 @@ private fun FullscreenCameraView(onClose: () -> Unit, onSaveError: () -> Unit) {
                         modifier = Modifier
                             .size(64.dp)
                             .background(
-                                color = Color(0xFF4CAF50),
+                                color = KeepGreen,
                                 shape = CircleShape
                             )
                     ) {
