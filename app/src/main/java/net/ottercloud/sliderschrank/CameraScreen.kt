@@ -101,8 +101,8 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
-import java.text.SimpleDateFormat
-import java.util.Locale
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 
 private const val TAG = "CameraScreen"
@@ -607,8 +607,8 @@ private fun saveBitmapToMediaStore(
     onError: () -> Unit
 ) {
     try {
-        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-            .format(System.currentTimeMillis())
+        val timestamp = LocalDateTime.now()
+            .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
         val fileName = "SliderSchrank_$timestamp.jpg"
 
         val contentValues = ContentValues().apply {
