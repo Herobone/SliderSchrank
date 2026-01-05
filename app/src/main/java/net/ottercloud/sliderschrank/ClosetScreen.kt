@@ -156,7 +156,9 @@ fun Closet(navController: NavController, modifier: Modifier = Modifier) {
                             )
                             database.outfitDao().updateOutfit(updatedOutfit)
                         }
-                    }
+                    },
+                    gridMinSize = 180,
+                    cardAspectRatio = 0.6f
                 )
             }
         }

@@ -85,7 +85,9 @@ import java.util.Locale
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import net.ottercloud.sliderschrank.data.AppDatabase
+import net.ottercloud.sliderschrank.data.model.Colour
 import net.ottercloud.sliderschrank.data.model.OutfitWithPieces
+import net.ottercloud.sliderschrank.data.model.Piece
 import net.ottercloud.sliderschrank.data.model.PieceWithDetails
 import net.ottercloud.sliderschrank.data.model.Slot
 import net.ottercloud.sliderschrank.ui.FilteredView
@@ -112,7 +114,9 @@ private class HomeScreenState(
 
     val currentOutfitIds by derivedStateOf {
         pagerStates.mapNotNull { (slot, pagerState) ->
-            groupedPieces[slot]?.getOrNull(pagerState.currentPage)?.piece?.id
+            val pieceId = groupedPieces[slot]?.getOrNull(pagerState.currentPage)?.piece?.id
+            // Filter out the empty HEAD piece (id = -1)
+            if (pieceId != null && pieceId != -1L) pieceId else null
         }.toSet()
     }
 
@@ -171,8 +175,13 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
     val scope = rememberCoroutineScope()
 
     val outfitDao = database?.outfitDao()
-    val likeUtil = remember(outfitDao) {
-        outfitDao?.let { LikeUtil(it) }
+    val pieceDao = database?.pieceDao()
+    val likeUtil = remember(outfitDao, pieceDao) {
+        if (outfitDao != null && pieceDao != null) {
+            LikeUtil(context, outfitDao, pieceDao)
+        } else {
+            null
+        }
     }
 
     val savedOutfits by likeUtil?.favoriteOutfitsWithPieces?.collectAsState(initial = emptyList())
@@ -187,7 +196,34 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
     )
         ?: remember { mutableStateOf(emptyList()) }
 
-    val groupedPieces = remember(pieces) { pieces.groupBy { it.piece.slot } }
+    val groupedPieces = remember(pieces) {
+        Log.d("HomeScreen", "Pieces list size: ${pieces.size}")
+        pieces.forEach { piece ->
+            Log.d("HomeScreen", "Piece: id=${piece.piece.id}, slot=${piece.piece.slot}")
+        }
+
+        val grouped = pieces.groupBy { it.piece.slot }.toMutableMap()
+        Log.d("HomeScreen", "Grouped slots: ${grouped.keys}")
+
+        // Add "None" option for HEAD slot at the beginning
+        val headPieces = grouped[Slot.HEAD].orEmpty().toMutableList()
+        val emptyHeadPiece = PieceWithDetails(
+            piece = Piece(
+                id = -1L, // Special ID for empty piece
+                imageUrl = "", // Empty image URL
+                isFavorite = false,
+                colour = Colour.BLACK,
+                slot = Slot.HEAD
+            ),
+            category = null,
+            tags = emptyList()
+        )
+        headPieces.add(0, emptyHeadPiece) // Add at the beginning
+        grouped[Slot.HEAD] = headPieces
+
+        Log.d("HomeScreen", "Final grouped slots: ${grouped.keys}")
+        grouped.toMap()
+    }
 
     val onToggleFavorite: (List<OutfitWithPieces>, Set<Long>) -> Unit = remember(scope, likeUtil) {
         { existing, current ->
@@ -200,15 +236,15 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
     val state = rememberHomeScreenState(groupedPieces, savedOutfits, onToggleFavorite)
 
     // Load outfit if loadOutfitId is provided
-    // Depend on groupedPieces to re-trigger when data loads
-    LaunchedEffect(loadOutfitId, groupedPieces.isNotEmpty()) {
+    // Depend on pieces to re-trigger when data loads (not groupedPieces which always has HEAD)
+    LaunchedEffect(loadOutfitId, pieces.isNotEmpty()) {
         Log.d(
             "HomeScreen",
-            "LaunchedEffect triggered: loadOutfitId=$loadOutfitId, pagerStates.size=${state.pagerStates.size}, groupedPieces.size=${groupedPieces.size}"
+            "LaunchedEffect triggered: loadOutfitId=$loadOutfitId, pagerStates.size=${state.pagerStates.size}, groupedPieces.size=${groupedPieces.size}, pieces.size=${pieces.size}"
         )
 
         if (loadOutfitId != null && loadOutfitId > 0 && database != null &&
-            state.pagerStates.isNotEmpty() && groupedPieces.isNotEmpty()
+            state.pagerStates.isNotEmpty() && pieces.isNotEmpty()
         ) {
             Log.d("HomeScreen", "Attempting to load outfit with ID: $loadOutfitId")
 
@@ -222,6 +258,9 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
             )
 
             outfitWithPieces?.let { outfit ->
+                // Track which slots have pieces in the outfit
+                val slotsInOutfit = outfit.pieces.map { it.slot }.toSet()
+
                 // For each piece in the outfit, find its slot and scroll to it
                 // Use scrollToPage (instant) to load all pieces at once without animation delay
                 outfit.pieces.forEach { piece ->
@@ -251,11 +290,22 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
                         )
                     }
                 }
+
+                // For HEAD slot, if no HEAD piece in outfit, scroll to "None" (index 0)
+                if (Slot.HEAD !in slotsInOutfit) {
+                    state.pagerStates[Slot.HEAD]?.let { pagerState ->
+                        Log.d(
+                            "HomeScreen",
+                            "No HEAD piece in outfit, scrolling to 'None' (index 0)"
+                        )
+                        pagerState.scrollToPage(0)
+                    }
+                }
             }
         } else {
             Log.d(
                 "HomeScreen",
-                "Skipping outfit load: loadOutfitId=$loadOutfitId, database=$database, pagerStates.isEmpty=${state.pagerStates.isEmpty()}, groupedPieces.isEmpty=${groupedPieces.isEmpty()}"
+                "Skipping outfit load: loadOutfitId=$loadOutfitId, database=$database, pagerStates.isEmpty=${state.pagerStates.isEmpty()}, pieces.isEmpty=${pieces.isEmpty()}"
             )
         }
     }
@@ -519,29 +569,47 @@ fun GarmentItem(
                 .fillMaxSize()
                 .clickable(onClick = onGarmentClick)
         ) {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(garment.piece.imageUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = garment.category?.name ?: garment.piece.id.toString(),
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit
-            )
-        }
-        IconButton(
-            onClick = onLockClick,
-            modifier = Modifier.align(Alignment.TopEnd)
-        ) {
-            Icon(
-                imageVector = if (isLocked) Icons.Default.Lock else Icons.Default.LockOpen,
-                contentDescription = stringResource(R.string.lock_item),
-                tint = if (isLocked) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            // Check if this is the empty HEAD piece
+            if (garment.piece.id == -1L) {
+                // Display "None" for empty piece
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "None",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-            )
+            } else {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(garment.piece.imageUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = garment.category?.name ?: garment.piece.id.toString(),
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
+        // Don't show lock icon for empty piece
+        if (garment.piece.id != -1L) {
+            IconButton(
+                onClick = onLockClick,
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
+                Icon(
+                    imageVector = if (isLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                    contentDescription = stringResource(R.string.lock_item),
+                    tint = if (isLocked) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    }
+                )
+            }
         }
     }
 }

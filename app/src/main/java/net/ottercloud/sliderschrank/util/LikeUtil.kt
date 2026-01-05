@@ -28,14 +28,20 @@
  */
 package net.ottercloud.sliderschrank.util
 
+import android.content.Context
 import android.util.Log
 import java.util.Date
 import kotlinx.coroutines.flow.Flow
 import net.ottercloud.sliderschrank.data.dao.OutfitDao
+import net.ottercloud.sliderschrank.data.dao.PieceDao
 import net.ottercloud.sliderschrank.data.model.Outfit
 import net.ottercloud.sliderschrank.data.model.OutfitWithPieces
 
-class LikeUtil(private val outfitDao: OutfitDao) {
+class LikeUtil(
+    private val context: Context,
+    private val outfitDao: OutfitDao,
+    private val pieceDao: PieceDao
+) {
 
     val favoriteOutfitsWithPieces: Flow<List<OutfitWithPieces>> =
         outfitDao.getAllOutfitsWithPieces()
@@ -50,15 +56,22 @@ class LikeUtil(private val outfitDao: OutfitDao) {
             outfitDao.deleteOutfit(matchingOutfit.outfit)
             Log.d("LikeUtil", "Outfit removed: $pieceIds")
         } else {
-            // Create new outfit
-            // Since we don't have a composed image, we'll use a placeholder or empty string
+            // Fetch the actual pieces to generate the composite image
+            val pieces = pieceIds.mapNotNull { pieceId ->
+                pieceDao.getPieceById(pieceId)
+            }
+
+            // Generate composite image from all pieces
+            val imageUrl = OutfitImageGenerator.generateOutfitImage(context, pieces)
+
+            // Create new outfit with the generated image
             val newOutfit = Outfit(
-                imageUrl = "",
+                imageUrl = imageUrl,
                 isFavorite = true,
                 createdAt = Date()
             )
             outfitDao.insertOutfitWithDetails(newOutfit, pieceIds.toList(), emptyList())
-            Log.d("LikeUtil", "Outfit added: $pieceIds")
+            Log.d("LikeUtil", "Outfit added: $pieceIds with image: $imageUrl")
         }
     }
 }

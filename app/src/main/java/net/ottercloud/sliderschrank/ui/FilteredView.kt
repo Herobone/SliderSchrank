@@ -80,7 +80,9 @@ fun <T> FilteredView(
     modifier: Modifier = Modifier,
     categoryProvider: (T) -> String? = { null },
     slotProvider: (T) -> Slot? = { null },
-    slotFilter: Slot? = null
+    slotFilter: Slot? = null,
+    gridMinSize: Int = 120,
+    cardAspectRatio: Float = 1f
 ) {
     val selectedFilters = remember { mutableStateListOf<String>() }
 
@@ -155,7 +157,7 @@ fun <T> FilteredView(
 
         // Grid of Items
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 120.dp),
+            columns = GridCells.Adaptive(minSize = gridMinSize.dp),
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -166,7 +168,8 @@ fun <T> FilteredView(
                     imageUrl = imageUrlProvider(item),
                     isFavorite = isFavoriteProvider(item),
                     onFavoriteClick = { onFavoriteClick(item) },
-                    onClick = { onItemClick(item) }
+                    onClick = { onItemClick(item) },
+                    aspectRatio = cardAspectRatio
                 )
             }
         }
@@ -179,13 +182,14 @@ fun ClothingItemCard(
     isFavorite: Boolean,
     onFavoriteClick: () -> Unit,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    aspectRatio: Float = 1f
 ) {
     Surface(
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 2.dp,
         modifier = modifier
-            .aspectRatio(1f)
+            .aspectRatio(aspectRatio)
             .clickable(onClick = onClick)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {

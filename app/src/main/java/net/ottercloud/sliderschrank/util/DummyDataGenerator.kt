@@ -36,7 +36,6 @@ import net.ottercloud.sliderschrank.data.AppDatabase
 import net.ottercloud.sliderschrank.data.model.Category
 import net.ottercloud.sliderschrank.data.model.Colour
 import net.ottercloud.sliderschrank.data.model.Outfit
-import net.ottercloud.sliderschrank.data.model.OutfitPieceCrossRef
 import net.ottercloud.sliderschrank.data.model.Piece
 import net.ottercloud.sliderschrank.data.model.Slot
 
@@ -160,23 +159,39 @@ object DummyDataGenerator {
                 }
             }
 
-            // Outfits
-            if (createdPieceIds.size >= 8) {
-                val outfitId = outfitDao.insertOutfit(
-                    Outfit(
-                        // Using top image as outfit image for now
-                        imageUrl = getUri(context, R.drawable.img_2002),
-                        isFavorite = true
-                    )
+            // Create a dummy outfit with actual pieces
+            if (createdPieceIds.size >= 4) {
+                // Get pieces for the outfit: HEAD, TOP, BOTTOM, FEET
+                // HEAD: index 0 (img_1001 - Blue casual hat)
+                // TOP: index 3 (img_2002 - Blue casual top)
+                // BOTTOM: index 9 (img_3001 - Blue denim jeans)
+                // FEET: index 10 (img_4001 - White sport shoes)
+                val outfitPieceIds = listOf(
+                    createdPieceIds[0], // HEAD
+                    createdPieceIds[3], // TOP
+                    createdPieceIds[9], // BOTTOM
+                    createdPieceIds[10] // FEET
                 )
-                // Add some pieces to the outfit
-                // Top (img_2002)
-                outfitDao.insertOutfitPieceCrossRef(
-                    OutfitPieceCrossRef(outfitId, createdPieceIds[0])
+
+                // Fetch the actual pieces to generate the image
+                val outfitPieces = outfitPieceIds.mapNotNull { pieceId ->
+                    pieceDao.getPieceById(pieceId)
+                }
+
+                // Generate composite outfit image
+                val outfitImageUrl = OutfitImageGenerator.generateOutfitImage(context, outfitPieces)
+
+                // Create outfit with generated image
+                val outfit = Outfit(
+                    imageUrl = outfitImageUrl,
+                    isFavorite = true
                 )
-                // Bottom (img_3001)
-                outfitDao.insertOutfitPieceCrossRef(
-                    OutfitPieceCrossRef(outfitId, createdPieceIds[6])
+
+                // Insert outfit with all pieces and tags
+                outfitDao.insertOutfitWithDetails(
+                    outfit = outfit,
+                    pieceIds = outfitPieceIds,
+                    tagIds = emptyList()
                 )
             }
         }

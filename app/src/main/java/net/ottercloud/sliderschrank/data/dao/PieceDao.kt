@@ -51,6 +51,9 @@ interface PieceDao {
     @Query("SELECT * FROM pieces WHERE id = :id")
     fun getPieceWithDetailsById(id: Long): Flow<PieceWithDetails?>
 
+    @Query("SELECT * FROM pieces WHERE id = :id")
+    suspend fun getPieceById(id: Long): Piece?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPiece(piece: Piece): Long
 
