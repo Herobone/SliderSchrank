@@ -28,12 +28,17 @@
  */
 package net.ottercloud.sliderschrank
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -44,15 +49,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import net.ottercloud.sliderschrank.data.AppDatabase
 import net.ottercloud.sliderschrank.ui.FilteredView
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 import net.ottercloud.sliderschrank.util.DummyDataGenerator
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Closet(modifier: Modifier = Modifier) {
+fun Closet(navController: NavController, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val database = remember { AppDatabase.getDatabase(context) }
     val scope = rememberCoroutineScope()
@@ -70,51 +78,70 @@ fun Closet(modifier: Modifier = Modifier) {
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Clothes", "Outfits")
-
-    Column(modifier = modifier.fillMaxSize()) {
-        PrimaryTabRow(selectedTabIndex = selectedTabIndex) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index },
-                    text = { Text(title) }
-                )
-            }
-        }
-
-        when (selectedTabIndex) {
-            0 -> FilteredView(
-                items = pieces,
-                imageUrlProvider = { it.piece.imageUrl },
-                tagProvider = { it.tags.map { tag -> tag.name } },
-                onItemClick = { /* Handle click */ },
-                isFavoriteProvider = { it.piece.isFavorite },
-                onFavoriteClick = { pieceWithDetails ->
-                    scope.launch {
-                        val updatedPiece = pieceWithDetails.piece.copy(
-                            isFavorite = !pieceWithDetails.piece.isFavorite
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.closet)) },
+                actions = {
+                    IconButton(onClick = {
+                        navController.navigate(AppDestinations.SETTINGS.name)
+                    }) {
+                        Icon(
+                            imageVector = AppDestinations.SETTINGS.icon,
+                            contentDescription = stringResource(R.string.settings)
                         )
-                        database.pieceDao().updatePiece(updatedPiece)
-                    }
-                },
-                categoryProvider = { it.category?.name },
-                slotProvider = { it.piece.slot }
-            )
-            1 -> FilteredView(
-                items = outfits,
-                imageUrlProvider = { it.outfit.imageUrl },
-                tagProvider = { it.tags.map { tag -> tag.name } },
-                onItemClick = { /* Handle click */ },
-                isFavoriteProvider = { it.outfit.isFavorite },
-                onFavoriteClick = { outfitWithPieces ->
-                    scope.launch {
-                        val updatedOutfit = outfitWithPieces.outfit.copy(
-                            isFavorite = !outfitWithPieces.outfit.isFavorite
-                        )
-                        database.outfitDao().updateOutfit(updatedOutfit)
                     }
                 }
             )
+        }
+    ) { innerPadding ->
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            PrimaryTabRow(selectedTabIndex = selectedTabIndex) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = { Text(title) }
+                    )
+                }
+            }
+
+            when (selectedTabIndex) {
+                0 -> FilteredView(
+                    items = pieces,
+                    imageUrlProvider = { it.piece.imageUrl },
+                    tagProvider = { it.tags.map { tag -> tag.name } },
+                    onItemClick = { /* Handle click */ },
+                    isFavoriteProvider = { it.piece.isFavorite },
+                    onFavoriteClick = { pieceWithDetails ->
+                        scope.launch {
+                            val updatedPiece = pieceWithDetails.piece.copy(
+                                isFavorite = !pieceWithDetails.piece.isFavorite
+                            )
+                            database.pieceDao().updatePiece(updatedPiece)
+                        }
+                    },
+                    categoryProvider = { it.category?.name },
+                    slotProvider = { it.piece.slot }
+                )
+
+                1 -> FilteredView(
+                    items = outfits,
+                    imageUrlProvider = { it.outfit.imageUrl },
+                    tagProvider = { it.tags.map { tag -> tag.name } },
+                    onItemClick = { /* Handle click */ },
+                    isFavoriteProvider = { it.outfit.isFavorite },
+                    onFavoriteClick = { outfitWithPieces ->
+                        scope.launch {
+                            val updatedOutfit = outfitWithPieces.outfit.copy(
+                                isFavorite = !outfitWithPieces.outfit.isFavorite
+                            )
+                            database.outfitDao().updateOutfit(updatedOutfit)
+                        }
+                    }
+                )
+            }
         }
     }
 }
@@ -123,9 +150,6 @@ fun Closet(modifier: Modifier = Modifier) {
 @Composable
 private fun ClosetPreview() {
     SliderSchrankTheme {
-        // Preview won't work well with DB access, but keeping it for structure
-        Box(Modifier.fillMaxSize()) {
-            Text("Closet Preview")
-        }
+        Closet(navController = rememberNavController())
     }
 }

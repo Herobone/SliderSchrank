@@ -31,34 +31,26 @@ package net.ottercloud.sliderschrank
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CameraEnhance
-import androidx.compose.material.icons.filled.Checkroom
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 
 class MainActivity : AppCompatActivity() {
@@ -77,12 +69,16 @@ class MainActivity : AppCompatActivity() {
 @PreviewScreenSizes
 @Composable
 private fun SliderSchrankApp(modifier: Modifier = Modifier) {
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+    val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
 
     NavigationSuiteScaffold(
         modifier = modifier,
         navigationSuiteItems = {
             AppDestinations.entries.filter { it.navigatorVisible }.forEach { destination ->
+                val selected =
+                    currentDestination?.hierarchy?.any { it.route == destination.name } == true
                 item(
                     icon = {
                         Icon(
@@ -92,65 +88,54 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
                         )
                     },
                     label = null,
-                    selected = destination == currentDestination,
-                    onClick = { currentDestination = destination }
+                    selected = selected,
+                    onClick = {
+                        navController.navigate(destination.name) {
+                            // Pop up to the start destination of the graph to
+                            // avoid building up a large stack of destinations
+                            // on the back stack as users select items
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            // Avoid multiple copies of the same destination when
+                            // re-selecting the same item
+                            launchSingleTop = true
+                            // Restore state when re-selecting a previously selected item
+                            restoreState = true
+                        }
+                    }
                 )
             }
         }
     ) {
         Scaffold(
-            topBar = {
-                if (currentDestination == AppDestinations.CLOSET) {
-                    TopAppBar(
-                        title = { Text(stringResource(R.string.closet)) },
-                        actions = {
-                            IconButton(onClick = {
-                                currentDestination = AppDestinations.SETTINGS
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.Settings,
-                                    contentDescription = stringResource(R.string.settings)
-                                )
-                            }
-                        }
-                    )
-                } else if (currentDestination == AppDestinations.SETTINGS) {
-                    TopAppBar(
-                        title = { Text(stringResource(R.string.settings)) },
-                        navigationIcon = {
-                            IconButton(onClick = {
-                                currentDestination =
-                                    AppDestinations.CLOSET
-                            }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = stringResource(R.string.back)
-                                )
-                            }
-                        }
-                    )
-                }
-            },
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
             val contentModifier = Modifier.padding(innerPadding)
-            when (currentDestination) {
-                AppDestinations.HOME -> HomeScreen(modifier = contentModifier)
-                AppDestinations.CAMERA -> CameraScreen(modifier = contentModifier)
-                AppDestinations.CLOSET -> Closet(modifier = contentModifier)
-                AppDestinations.SETTINGS -> SettingsScreen(modifier = contentModifier)
+            NavHost(
+                navController = navController,
+                startDestination = AppDestinations.HOME.name,
+                modifier = contentModifier
+            ) {
+                composable(AppDestinations.HOME.name) {
+                    HomeScreen(modifier = Modifier.fillMaxSize())
+                }
+                composable(AppDestinations.CAMERA.name) {
+                    CameraScreen(modifier = Modifier.fillMaxSize())
+                }
+                composable(AppDestinations.CLOSET.name) {
+                    Closet(
+                        modifier = Modifier.fillMaxSize(),
+                        navController = navController
+                    )
+                }
+                composable(AppDestinations.SETTINGS.name) {
+                    SettingsScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        navController = navController
+                    )
+                }
             }
         }
     }
-}
-
-enum class AppDestinations(
-    @param:StringRes val labelRes: Int,
-    val icon: ImageVector,
-    val navigatorVisible: Boolean = true
-) {
-    HOME(R.string.home, Icons.Default.Home),
-    CAMERA(R.string.camera, Icons.Filled.CameraEnhance),
-    CLOSET(R.string.closet, Icons.Filled.Checkroom),
-    SETTINGS(R.string.settings, Icons.Default.Settings, navigatorVisible = false)
 }

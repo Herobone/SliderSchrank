@@ -26,16 +26,26 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank.ui.theme
+package net.ottercloud.sliderschrank
 
-import androidx.compose.ui.graphics.Color
+import androidx.annotation.StringRes
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraEnhance
+import androidx.compose.material.icons.filled.Checkroom
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.ui.graphics.vector.ImageVector
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
-
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
-
-val KeepGreen = Color(0xFF4CAF50)
+/**
+ * Destinations used in the [SliderSchrankApp].
+ */
+enum class AppDestinations(
+    @param:StringRes val labelRes: Int,
+    val icon: ImageVector,
+    val navigatorVisible: Boolean = true
+) {
+    HOME(R.string.home, Icons.Default.Home),
+    CAMERA(R.string.camera, Icons.Filled.CameraEnhance),
+    CLOSET(R.string.closet, Icons.Filled.Checkroom),
+    SETTINGS(R.string.settings, Icons.Default.Settings, navigatorVisible = false)
+}
