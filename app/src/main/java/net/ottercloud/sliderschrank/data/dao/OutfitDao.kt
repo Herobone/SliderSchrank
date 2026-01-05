@@ -40,6 +40,7 @@ import net.ottercloud.sliderschrank.data.model.Outfit
 import net.ottercloud.sliderschrank.data.model.OutfitPieceCrossRef
 import net.ottercloud.sliderschrank.data.model.OutfitTagCrossRef
 import net.ottercloud.sliderschrank.data.model.OutfitWithPieces
+import net.ottercloud.sliderschrank.data.model.Tag
 
 @Dao
 interface OutfitDao {
@@ -72,6 +73,15 @@ interface OutfitDao {
     @Query("DELETE FROM outfit_tag_cross_ref WHERE outfit_id = :outfitId")
     suspend fun deleteTagsForOutfit(outfitId: Long)
 
+    @Query("DELETE FROM outfit_tag_cross_ref WHERE outfit_id = :outfitId AND tag_id = :tagId")
+    suspend fun deleteOutfitTagCrossRef(outfitId: Long, tagId: Long)
+
+    @Query("SELECT * FROM tags WHERE name = :name LIMIT 1")
+    suspend fun getTagByName(name: String): Tag?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTag(tag: Tag): Long
+
     @Transaction
     suspend fun insertOutfitWithDetails(outfit: Outfit, pieceIds: List<Long>, tagIds: List<Long>) {
         val outfitId = insertOutfit(outfit)
@@ -94,5 +104,24 @@ interface OutfitDao {
         tagIds.forEach { tagId ->
             insertOutfitTagCrossRef(OutfitTagCrossRef(outfit.id, tagId))
         }
+    }
+
+    /**
+     * Add a tag to an outfit by tag name. Creates the tag if it doesn't exist.
+     */
+    @Transaction
+    suspend fun addTagToOutfit(outfitId: Long, tagName: String) {
+        // Check if tag exists
+        val existingTag = getTagByName(tagName)
+        val tagId = existingTag?.id ?: insertTag(Tag(name = tagName))
+        // Add cross reference
+        insertOutfitTagCrossRef(OutfitTagCrossRef(outfitId, tagId))
+    }
+
+    /**
+     * Remove a tag from an outfit
+     */
+    suspend fun removeTagFromOutfit(outfitId: Long, tagId: Long) {
+        deleteOutfitTagCrossRef(outfitId, tagId)
     }
 }

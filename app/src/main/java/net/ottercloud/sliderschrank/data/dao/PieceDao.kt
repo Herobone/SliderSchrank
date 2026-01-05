@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.Flow
 import net.ottercloud.sliderschrank.data.model.Piece
 import net.ottercloud.sliderschrank.data.model.PieceTagCrossRef
 import net.ottercloud.sliderschrank.data.model.PieceWithDetails
+import net.ottercloud.sliderschrank.data.model.Tag
 
 @Dao
 interface PieceDao {
@@ -65,6 +66,15 @@ interface PieceDao {
     @Query("DELETE FROM piece_tag_cross_ref WHERE piece_id = :pieceId")
     suspend fun deleteTagsForPiece(pieceId: Long)
 
+    @Query("DELETE FROM piece_tag_cross_ref WHERE piece_id = :pieceId AND tag_id = :tagId")
+    suspend fun deletePieceTagCrossRef(pieceId: Long, tagId: Long)
+
+    @Query("SELECT * FROM tags WHERE name = :name LIMIT 1")
+    suspend fun getTagByName(name: String): Tag?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTag(tag: Tag): Long
+
     @Transaction
     suspend fun updatePieceWithTags(piece: Piece, tagIds: List<Long>) {
         updatePiece(piece)
@@ -72,5 +82,24 @@ interface PieceDao {
         tagIds.forEach { tagId ->
             insertPieceTagCrossRef(PieceTagCrossRef(piece.id, tagId))
         }
+    }
+
+    /**
+     * Add a tag to a piece by tag name. Creates the tag if it doesn't exist.
+     */
+    @Transaction
+    suspend fun addTagToPiece(pieceId: Long, tagName: String) {
+        // Check if tag exists
+        val existingTag = getTagByName(tagName)
+        val tagId = existingTag?.id ?: insertTag(Tag(name = tagName))
+        // Add cross reference
+        insertPieceTagCrossRef(PieceTagCrossRef(pieceId, tagId))
+    }
+
+    /**
+     * Remove a tag from a piece
+     */
+    suspend fun removeTagFromPiece(pieceId: Long, tagId: Long) {
+        deletePieceTagCrossRef(pieceId, tagId)
     }
 }

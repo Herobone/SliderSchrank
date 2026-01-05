@@ -51,11 +51,14 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -68,72 +71,87 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import java.util.Locale
+import kotlinx.coroutines.launch
+import net.ottercloud.sliderschrank.data.AppDatabase
+import net.ottercloud.sliderschrank.data.model.OutfitWithPieces
+import net.ottercloud.sliderschrank.data.model.PieceWithDetails
+import net.ottercloud.sliderschrank.data.model.Slot
+import net.ottercloud.sliderschrank.ui.FilteredView
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import net.ottercloud.sliderschrank.util.DummyDataGenerator
 import net.ottercloud.sliderschrank.util.LikeUtil
 import net.ottercloud.sliderschrank.util.SettingsManager
 import net.ottercloud.sliderschrank.util.performUiShuffle
 
-private val categoryOrder = listOf(
-    GarmentType.HEAD,
-    GarmentType.TOP,
-    GarmentType.BOTTOM,
-    GarmentType.FEET
-)
+private val slotOrder = listOf(Slot.HEAD, Slot.TOP, Slot.BOTTOM, Slot.FEET)
+
+private fun Slot.displayName(): String =
+    name.lowercase(Locale.getDefault()).replaceFirstChar { it.titlecase(Locale.getDefault()) }
 
 @OptIn(ExperimentalFoundationApi::class)
 private class HomeScreenState(
-    val groupedGarments: Map<GarmentType, List<Garment>>,
-    val pagerStates: Map<GarmentType, PagerState>
+    val groupedPieces: Map<Slot, List<PieceWithDetails>>,
+    val pagerStates: Map<Slot, PagerState>,
+    val savedOutfits: List<OutfitWithPieces>,
+    val onToggleFavorite: (List<OutfitWithPieces>, Set<Long>) -> Unit
 ) {
-    var lockedGarmentIds by mutableStateOf(emptySet<Int>())
+    var lockedPieceIds by mutableStateOf(emptySet<Long>())
         private set
+
     val currentOutfitIds by derivedStateOf {
-        pagerStates.mapNotNull { (category, pagerState) ->
-            groupedGarments[category]?.getOrNull(pagerState.currentPage)?.id
+        pagerStates.mapNotNull { (slot, pagerState) ->
+            groupedPieces[slot]?.getOrNull(pagerState.currentPage)?.piece?.id
         }.toSet()
     }
 
     val isCurrentOutfitSaved by derivedStateOf {
-        LikeUtil.isFavorite(currentOutfitIds)
-    }
-
-    fun onLockClick(garmentId: Int) {
-        lockedGarmentIds = if (lockedGarmentIds.contains(garmentId)) {
-            lockedGarmentIds - garmentId
-        } else {
-            lockedGarmentIds + garmentId
+        val currentIds = currentOutfitIds
+        savedOutfits.any { saved ->
+            saved.pieces.map { it.id }.toSet() == currentIds
         }
     }
 
-    fun onGarmentClick(category: GarmentType) {
-        println("Category $category was clicked")
+    fun onLockClick(pieceId: Long) {
+        lockedPieceIds = if (lockedPieceIds.contains(pieceId)) {
+            lockedPieceIds - pieceId
+        } else {
+            lockedPieceIds + pieceId
+        }
     }
 
     fun onFavoriteClick() {
-        LikeUtil.toggleFavorite(currentOutfitIds)
+        onToggleFavorite(savedOutfits, currentOutfitIds)
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun rememberHomeScreenState(
-    groupedGarments: Map<GarmentType, List<Garment>> =
-        remember { dummyGarments.groupBy { it.type } }
+    groupedPieces: Map<Slot, List<PieceWithDetails>>,
+    savedOutfits: List<OutfitWithPieces>,
+    onToggleFavorite: (List<OutfitWithPieces>, Set<Long>) -> Unit
 ): HomeScreenState {
-    val pagerStates = categoryOrder.associateWith { category ->
-        val garmentsForCategory = groupedGarments[category].orEmpty()
-        rememberPagerState(pageCount = { garmentsForCategory.size })
+    val pagerStates = slotOrder.associateWith { slot ->
+        val piecesForSlot = groupedPieces[slot].orEmpty()
+        rememberPagerState(pageCount = { piecesForSlot.size })
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
-    return remember(groupedGarments, pagerStates) {
+    return remember(groupedPieces, pagerStates, savedOutfits, onToggleFavorite) {
         HomeScreenState(
-            groupedGarments = groupedGarments,
-            pagerStates = pagerStates
+            groupedPieces = groupedPieces,
+            pagerStates = pagerStates,
+            savedOutfits = savedOutfits,
+            onToggleFavorite = onToggleFavorite
         )
     }
 }
@@ -142,24 +160,55 @@ private fun rememberHomeScreenState(
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val isInPreview = LocalInspectionMode.current
     val settingsManager = remember { SettingsManager(context) }
     val background by settingsManager.background.collectAsState(initial = AppBackground.WHITE)
-
-    val state = rememberHomeScreenState()
-
+    val database = remember(context, isInPreview) {
+        if (isInPreview) null else AppDatabase.getDatabase(context)
+    }
     val scope = rememberCoroutineScope()
 
-    val onShuffleClick: () -> Unit =
-        remember(scope, state) {
-            {
-                performUiShuffle(
-                    scope = scope,
-                    pagerStates = state.pagerStates,
-                    groupedGarments = state.groupedGarments,
-                    lockedGarmentIds = state.lockedGarmentIds
-                )
+    val outfitDao = database?.outfitDao()
+    val likeUtil = remember(outfitDao) {
+        outfitDao?.let { LikeUtil(it) }
+    }
+
+    val savedOutfits by likeUtil?.favoriteOutfitsWithPieces?.collectAsState(initial = emptyList())
+        ?: remember { mutableStateOf(emptyList()) }
+
+    LaunchedEffect(database) {
+        database?.let { DummyDataGenerator.generateDummyData(context, it) }
+    }
+
+    val pieces by database?.pieceDao()?.getAllPiecesWithDetails()?.collectAsState(
+        initial = emptyList()
+    )
+        ?: remember { mutableStateOf(emptyList()) }
+
+    val groupedPieces = remember(pieces) { pieces.groupBy { it.piece.slot } }
+
+    val onToggleFavorite: (List<OutfitWithPieces>, Set<Long>) -> Unit = remember(scope, likeUtil) {
+        { existing, current ->
+            scope.launch {
+                likeUtil?.toggleFavorite(existing, current)
             }
         }
+    }
+
+    val state = rememberHomeScreenState(groupedPieces, savedOutfits, onToggleFavorite)
+
+    val onShuffleClick: () -> Unit = remember(scope, state) {
+        {
+            performUiShuffle(
+                scope = scope,
+                pagerStates = state.pagerStates,
+                groupedPieces = state.groupedPieces,
+                lockedPieceIds = state.lockedPieceIds
+            )
+        }
+    }
+
+    var selectedSlotForPicker by remember { mutableStateOf<Slot?>(null) }
 
     Box(modifier = modifier.fillMaxSize()) {
         when (background) {
@@ -209,29 +258,89 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                     .fillMaxHeight(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                categoryOrder.forEach { category ->
-                    val garmentsForCategory = state.groupedGarments[category].orEmpty()
-                    val pagerState = state.pagerStates[category]
-                    val weight = when (category) {
-                        GarmentType.HEAD, GarmentType.FEET -> 0.2f
+                slotOrder.forEach { slot ->
+                    val piecesForSlot = state.groupedPieces[slot].orEmpty()
+                    val pagerState = state.pagerStates[slot]
+                    val weight = when (slot) {
+                        Slot.HEAD, Slot.FEET -> 0.2f
                         else -> 0.3f
                     }
 
-                    if (garmentsForCategory.isNotEmpty() && pagerState != null) {
-                        val currentGarment =
-                            garmentsForCategory.getOrNull(pagerState.currentPage)
-                        val isCurrentItemLocked = currentGarment?.id in state.lockedGarmentIds
+                    if (piecesForSlot.isNotEmpty() && pagerState != null) {
+                        val currentPiece = piecesForSlot.getOrNull(pagerState.currentPage)
+                        val isCurrentItemLocked = currentPiece?.piece?.id in state.lockedPieceIds
 
                         GarmentSlider(
-                            garments = garmentsForCategory,
+                            garments = piecesForSlot,
                             pagerState = pagerState,
                             isSwipeEnabled = !isCurrentItemLocked,
-                            lockedGarmentIds = state.lockedGarmentIds,
+                            lockedPieceIds = state.lockedPieceIds,
                             onLockClick = state::onLockClick,
-                            onGarmentClick = state::onGarmentClick,
+                            onPieceClick = { selectedSlotForPicker = it.piece.slot },
                             modifier = Modifier
                                 .weight(weight)
                                 .fillMaxWidth()
+                        )
+                    }
+                }
+            }
+        }
+
+        selectedSlotForPicker?.let { slot ->
+            Dialog(
+                onDismissRequest = { selectedSlotForPicker = null },
+                properties = DialogProperties(usePlatformDefaultWidth = false)
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth(0.95f)
+                        .fillMaxHeight(0.88f),
+                    shape = MaterialTheme.shapes.large,
+                    tonalElevation = 8.dp
+                ) {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Select ${slot.displayName()}",
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                        }
+                        HorizontalDivider()
+                        FilteredView(
+                            modifier = Modifier.fillMaxSize(),
+                            items = pieces,
+                            imageUrlProvider = { it.piece.imageUrl },
+                            tagProvider = { it.tags.map { tag -> tag.name } },
+                            onItemClick = { pieceWithDetails ->
+                                val targetIndex = state.groupedPieces[slot]
+                                    ?.indexOfFirst { it.piece.id == pieceWithDetails.piece.id }
+                                    ?: -1
+
+                                if (targetIndex >= 0) {
+                                    scope.launch {
+                                        state.pagerStates[slot]?.animateScrollToPage(targetIndex)
+                                    }
+                                }
+                                selectedSlotForPicker = null
+                            },
+                            isFavoriteProvider = { it.piece.isFavorite },
+                            onFavoriteClick = { pieceWithDetails ->
+                                scope.launch {
+                                    val updatedPiece = pieceWithDetails.piece.copy(
+                                        isFavorite = !pieceWithDetails.piece.isFavorite
+                                    )
+                                    database?.pieceDao()?.updatePiece(updatedPiece)
+                                }
+                            },
+                            categoryProvider = { it.category?.name },
+                            slotProvider = { it.piece.slot },
+                            slotFilter = slot
                         )
                     }
                 }
@@ -283,12 +392,12 @@ private fun HomeScreenTopBar(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GarmentSlider(
-    garments: List<Garment>,
+    garments: List<PieceWithDetails>,
     pagerState: PagerState,
     isSwipeEnabled: Boolean,
-    lockedGarmentIds: Set<Int>,
-    onLockClick: (Int) -> Unit,
-    onGarmentClick: (GarmentType) -> Unit,
+    lockedPieceIds: Set<Long>,
+    onLockClick: (Long) -> Unit,
+    onPieceClick: (PieceWithDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -299,19 +408,19 @@ fun GarmentSlider(
         HorizontalPager(
             state = pagerState,
             userScrollEnabled = isSwipeEnabled,
-            key = { page -> garments[page].id },
+            key = { page -> garments[page].piece.id },
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
         ) { page ->
             val garment = garments[page]
 
-            val itemOnLockClick = remember(garment.id) {
-                { onLockClick(garment.id) }
+            val itemOnLockClick = remember(garment.piece.id) {
+                { onLockClick(garment.piece.id) }
             }
 
-            val itemOnGarmentClick = remember(garment.type) {
-                { onGarmentClick(garment.type) }
+            val itemOnPieceClick = remember(garment.piece.id) {
+                { onPieceClick(garment) }
             }
 
             Box(
@@ -320,9 +429,9 @@ fun GarmentSlider(
             ) {
                 GarmentItem(
                     garment = garment,
-                    isLocked = lockedGarmentIds.contains(garment.id),
+                    isLocked = lockedPieceIds.contains(garment.piece.id),
                     onLockClick = itemOnLockClick,
-                    onGarmentClick = itemOnGarmentClick
+                    onGarmentClick = itemOnPieceClick
                 )
             }
         }
@@ -331,7 +440,7 @@ fun GarmentSlider(
 
 @Composable
 fun GarmentItem(
-    garment: Garment,
+    garment: PieceWithDetails,
     isLocked: Boolean,
     onLockClick: () -> Unit,
     onGarmentClick: () -> Unit,
@@ -347,9 +456,12 @@ fun GarmentItem(
                 .fillMaxSize()
                 .clickable(onClick = onGarmentClick)
         ) {
-            Image(
-                painter = painterResource(id = garment.imageResId),
-                contentDescription = garment.name,
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(garment.piece.imageUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = garment.category?.name ?: garment.piece.id.toString(),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit
             )

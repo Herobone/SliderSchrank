@@ -84,24 +84,30 @@ fun <T> FilteredView(
 ) {
     val selectedFilters = remember { mutableStateListOf<String>() }
 
-    // Extract all unique tags and categories
-    val allFilters = remember(items) {
-        items.flatMap { item ->
+    // First filter by slot to get the base items for this slot
+    val slotFilteredItems = remember(items, slotFilter) {
+        if (slotFilter != null) {
+            items.filter { item ->
+                val itemSlot = slotProvider(item)
+                itemSlot == slotFilter
+            }
+        } else {
+            items
+        }
+    }
+
+    // Extract all unique tags and categories from slot-filtered items only
+    val allFilters = remember(slotFilteredItems) {
+        slotFilteredItems.flatMap { item ->
             val tags = tagProvider(item)
             val category = categoryProvider(item)
             if (category != null) tags + category else tags
         }.distinct().sorted()
     }
 
-    val filteredItems by remember(items, slotFilter, selectedFilters.toList()) {
+    val filteredItems by remember(slotFilteredItems, selectedFilters.toList()) {
         derivedStateOf {
-            items.filter { item ->
-                // Filter by Slot (Programmatic)
-                if (slotFilter != null) {
-                    val itemSlot = slotProvider(item)
-                    if (itemSlot != slotFilter) return@filter false
-                }
-
+            slotFilteredItems.filter { item ->
                 // Filter by Chips (Tags/Categories)
                 if (selectedFilters.isNotEmpty()) {
                     val itemTags = tagProvider(item)

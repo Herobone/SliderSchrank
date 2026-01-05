@@ -26,39 +26,53 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank.util
+package net.ottercloud.sliderschrank.data.model
 
-import android.util.Log
-import java.util.Date
-import kotlinx.coroutines.flow.Flow
-import net.ottercloud.sliderschrank.data.dao.OutfitDao
-import net.ottercloud.sliderschrank.data.model.Outfit
-import net.ottercloud.sliderschrank.data.model.OutfitWithPieces
+import net.ottercloud.sliderschrank.data.dao.PieceDao
 
-class LikeUtil(private val outfitDao: OutfitDao) {
+/**
+ * Extension functions to make tag management easier on PieceWithDetails
+ */
 
-    val favoriteOutfitsWithPieces: Flow<List<OutfitWithPieces>> =
-        outfitDao.getAllOutfitsWithPieces()
-
-    suspend fun toggleFavorite(existingOutfits: List<OutfitWithPieces>, pieceIds: Set<Long>) {
-        val matchingOutfit = existingOutfits.find { outfitWithPieces ->
-            val outfitPieceIds = outfitWithPieces.pieces.map { it.id }.toSet()
-            outfitPieceIds == pieceIds
-        }
-
-        if (matchingOutfit != null) {
-            outfitDao.deleteOutfit(matchingOutfit.outfit)
-            Log.d("LikeUtil", "Outfit removed: $pieceIds")
-        } else {
-            // Create new outfit
-            // Since we don't have a composed image, we'll use a placeholder or empty string
-            val newOutfit = Outfit(
-                imageUrl = "",
-                isFavorite = true,
-                createdAt = Date()
-            )
-            outfitDao.insertOutfitWithDetails(newOutfit, pieceIds.toList(), emptyList())
-            Log.d("LikeUtil", "Outfit added: $pieceIds")
-        }
+/**
+ * Add tags to this piece. Tags are referenced by name and will be created if they don't exist.
+ * @param dao The PieceDao to use for database operations
+ * @param tagNames List of tag names to add
+ */
+suspend fun PieceWithDetails.addTags(dao: PieceDao, tagNames: List<String>) {
+    tagNames.forEach { tagName ->
+        dao.addTagToPiece(piece.id, tagName)
     }
 }
+
+/**
+ * Remove tags from this piece.
+ * @param dao The PieceDao to use for database operations
+ * @param tagNames List of tag names to remove
+ */
+suspend fun PieceWithDetails.removeTags(dao: PieceDao, tagNames: List<String>) {
+    val tagsToRemove = tags.filter { it.name in tagNames }
+    tagsToRemove.forEach { tag ->
+        dao.removeTagFromPiece(piece.id, tag.id)
+    }
+}
+
+/**
+ * Set tags on this piece (replaces all existing tags).
+ * @param dao The PieceDao to use for database operations
+ * @param tagNames List of tag names to set
+ */
+suspend fun PieceWithDetails.setTags(dao: PieceDao, tagNames: List<String>) {
+    // Remove all existing tags
+    tags.forEach { tag ->
+        dao.removeTagFromPiece(piece.id, tag.id)
+    }
+    // Add new tags
+    addTags(dao, tagNames)
+}
+
+/**
+ * Get tag names as a list of strings
+ */
+val PieceWithDetails.tagNames: List<String>
+    get() = tags.map { it.name }

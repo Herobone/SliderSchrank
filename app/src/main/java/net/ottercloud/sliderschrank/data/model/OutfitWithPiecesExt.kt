@@ -26,39 +26,53 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank.util
+package net.ottercloud.sliderschrank.data.model
 
-import android.util.Log
-import java.util.Date
-import kotlinx.coroutines.flow.Flow
 import net.ottercloud.sliderschrank.data.dao.OutfitDao
-import net.ottercloud.sliderschrank.data.model.Outfit
-import net.ottercloud.sliderschrank.data.model.OutfitWithPieces
 
-class LikeUtil(private val outfitDao: OutfitDao) {
+/**
+ * Extension functions to make tag management easier on OutfitWithPieces
+ */
 
-    val favoriteOutfitsWithPieces: Flow<List<OutfitWithPieces>> =
-        outfitDao.getAllOutfitsWithPieces()
-
-    suspend fun toggleFavorite(existingOutfits: List<OutfitWithPieces>, pieceIds: Set<Long>) {
-        val matchingOutfit = existingOutfits.find { outfitWithPieces ->
-            val outfitPieceIds = outfitWithPieces.pieces.map { it.id }.toSet()
-            outfitPieceIds == pieceIds
-        }
-
-        if (matchingOutfit != null) {
-            outfitDao.deleteOutfit(matchingOutfit.outfit)
-            Log.d("LikeUtil", "Outfit removed: $pieceIds")
-        } else {
-            // Create new outfit
-            // Since we don't have a composed image, we'll use a placeholder or empty string
-            val newOutfit = Outfit(
-                imageUrl = "",
-                isFavorite = true,
-                createdAt = Date()
-            )
-            outfitDao.insertOutfitWithDetails(newOutfit, pieceIds.toList(), emptyList())
-            Log.d("LikeUtil", "Outfit added: $pieceIds")
-        }
+/**
+ * Add tags to this outfit. Tags are referenced by name and will be created if they don't exist.
+ * @param dao The OutfitDao to use for database operations
+ * @param tagNames List of tag names to add
+ */
+suspend fun OutfitWithPieces.addTags(dao: OutfitDao, tagNames: List<String>) {
+    tagNames.forEach { tagName ->
+        dao.addTagToOutfit(outfit.id, tagName)
     }
 }
+
+/**
+ * Remove tags from this outfit.
+ * @param dao The OutfitDao to use for database operations
+ * @param tagNames List of tag names to remove
+ */
+suspend fun OutfitWithPieces.removeTags(dao: OutfitDao, tagNames: List<String>) {
+    val tagsToRemove = tags.filter { it.name in tagNames }
+    tagsToRemove.forEach { tag ->
+        dao.removeTagFromOutfit(outfit.id, tag.id)
+    }
+}
+
+/**
+ * Set tags on this outfit (replaces all existing tags).
+ * @param dao The OutfitDao to use for database operations
+ * @param tagNames List of tag names to set
+ */
+suspend fun OutfitWithPieces.setTags(dao: OutfitDao, tagNames: List<String>) {
+    // Remove all existing tags
+    tags.forEach { tag ->
+        dao.removeTagFromOutfit(outfit.id, tag.id)
+    }
+    // Add new tags
+    addTags(dao, tagNames)
+}
+
+/**
+ * Get tag names as a list of strings
+ */
+val OutfitWithPieces.tagNames: List<String>
+    get() = tags.map { it.name }

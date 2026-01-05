@@ -32,24 +32,24 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.PagerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import net.ottercloud.sliderschrank.Garment
-import net.ottercloud.sliderschrank.GarmentType
+import net.ottercloud.sliderschrank.data.model.PieceWithDetails
+import net.ottercloud.sliderschrank.data.model.Slot
 
 @OptIn(ExperimentalFoundationApi::class)
 fun performUiShuffle(
     scope: CoroutineScope,
-    pagerStates: Map<GarmentType, PagerState>,
-    groupedGarments: Map<GarmentType, List<Garment>>,
-    lockedGarmentIds: Set<Int>
+    pagerStates: Map<Slot, PagerState>,
+    groupedPieces: Map<Slot, List<PieceWithDetails>>,
+    lockedPieceIds: Set<Long>
 ) {
     scope.launch {
-        pagerStates.forEach { (category, pagerState) ->
-            val garments = groupedGarments[category].orEmpty()
+        pagerStates.forEach { (slot, pagerState) ->
+            val pieces = groupedPieces[slot].orEmpty()
 
-            if (garments.isNotEmpty() && pagerState.pageCount > 1) {
-                val currentGarment = garments[pagerState.currentPage]
+            if (pieces.isNotEmpty() && pagerState.pageCount > 1) {
+                val currentPiece = pieces.getOrNull(pagerState.currentPage)
 
-                if (currentGarment.id !in lockedGarmentIds) {
+                if (currentPiece != null && currentPiece.piece.id !in lockedPieceIds) {
                     var newPage = pagerState.currentPage
 
                     while (newPage == pagerState.currentPage) {

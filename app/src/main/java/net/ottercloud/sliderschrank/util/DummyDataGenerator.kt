@@ -38,9 +38,7 @@ import net.ottercloud.sliderschrank.data.model.Colour
 import net.ottercloud.sliderschrank.data.model.Outfit
 import net.ottercloud.sliderschrank.data.model.OutfitPieceCrossRef
 import net.ottercloud.sliderschrank.data.model.Piece
-import net.ottercloud.sliderschrank.data.model.PieceTagCrossRef
 import net.ottercloud.sliderschrank.data.model.Slot
-import net.ottercloud.sliderschrank.data.model.Tag
 
 object DummyDataGenerator {
 
@@ -48,7 +46,6 @@ object DummyDataGenerator {
         withContext(Dispatchers.IO) {
             val pieceDao = database.pieceDao()
             val categoryDao = database.categoryDao()
-            val tagDao = database.tagDao()
             val outfitDao = database.outfitDao()
 
             // Check if data already exists
@@ -59,51 +56,64 @@ object DummyDataGenerator {
             val formalCatId = categoryDao.insertCategory(Category(name = "Formal"))
             val sportCatId = categoryDao.insertCategory(Category(name = "Sport"))
 
-            // Tags
-            val summerTagId = tagDao.insertTag(Tag(name = "Summer"))
-            val winterTagId = tagDao.insertTag(Tag(name = "Winter"))
-            val cottonTagId = tagDao.insertTag(Tag(name = "Cotton"))
-            val denimTagId = tagDao.insertTag(Tag(name = "Denim"))
-
-            // Pieces
+            // Pieces with their tag names
             val pieces = listOf(
+                Piece(
+                    imageUrl = getUri(context, R.drawable.img_1001),
+                    colour = Colour.BLUE,
+                    slot = Slot.HEAD,
+                    categoryId = casualCatId
+                ) to listOf("Summer", "Cotton"),
+                Piece(
+                    imageUrl = getUri(context, R.drawable.img_1002),
+                    colour = Colour.RED,
+                    slot = Slot.HEAD,
+                    categoryId = formalCatId
+                ) to listOf("Summer"),
                 // Tops (2xxx)
+
+                Piece(
+                    imageUrl = getUri(context, R.drawable.img_2001),
+                    colour = Colour.BLUE,
+                    slot = Slot.TOP,
+                    categoryId = formalCatId
+                ) to listOf("Summer", "Cotton"),
                 Piece(
                     imageUrl = getUri(context, R.drawable.img_2002),
                     colour = Colour.BLUE,
                     slot = Slot.TOP,
                     categoryId = casualCatId
-                ) to listOf(summerTagId, cottonTagId),
+                ) to listOf("Summer", "Cotton"),
                 Piece(
                     imageUrl = getUri(context, R.drawable.img_2003),
                     colour = Colour.RED,
                     slot = Slot.TOP,
                     categoryId = sportCatId
-                ) to listOf(summerTagId),
+                ) to listOf("Summer"),
                 Piece(
                     imageUrl = getUri(context, R.drawable.img_2004),
                     colour = Colour.GREEN,
                     slot = Slot.TOP,
                     categoryId = casualCatId
-                ) to listOf(cottonTagId),
+                ) to listOf("Cotton"),
                 Piece(
                     imageUrl = getUri(context, R.drawable.img_2005),
                     colour = Colour.WHITE,
                     slot = Slot.TOP,
                     categoryId = formalCatId
-                ) to listOf(winterTagId, cottonTagId),
+                ) to listOf("Winter", "Cotton"),
                 Piece(
                     imageUrl = getUri(context, R.drawable.img_2006),
                     colour = Colour.BLACK,
                     slot = Slot.TOP,
                     categoryId = formalCatId
-                ) to listOf(winterTagId),
+                ) to listOf("Winter"),
                 Piece(
                     imageUrl = getUri(context, R.drawable.img_2007),
                     colour = Colour.YELLOW,
                     slot = Slot.TOP,
                     categoryId = casualCatId
-                ) to listOf(summerTagId),
+                ) to listOf("Summer"),
 
                 // Bottoms (3xxx)
                 Piece(
@@ -111,13 +121,13 @@ object DummyDataGenerator {
                     colour = Colour.BLUE,
                     slot = Slot.BOTTOM,
                     categoryId = casualCatId
-                ) to listOf(denimTagId),
+                ) to listOf("Denim"),
                 Piece(
                     imageUrl = getUri(context, R.drawable.img_3002),
                     colour = Colour.BLACK,
                     slot = Slot.BOTTOM,
                     categoryId = formalCatId
-                ) to listOf(winterTagId),
+                ) to listOf("Winter"),
 
                 // Feet (4xxx)
                 Piece(
@@ -125,27 +135,28 @@ object DummyDataGenerator {
                     colour = Colour.WHITE,
                     slot = Slot.FEET,
                     categoryId = sportCatId
-                ) to listOf(summerTagId),
+                ) to listOf("Summer"),
                 Piece(
                     imageUrl = getUri(context, R.drawable.img_4002),
                     colour = Colour.BLACK,
                     slot = Slot.FEET,
                     categoryId = sportCatId
-                ) to listOf(summerTagId),
+                ) to listOf("Summer"),
                 Piece(
                     imageUrl = getUri(context, R.drawable.img_4003),
                     colour = Colour.BROWN,
                     slot = Slot.FEET,
                     categoryId = casualCatId
-                ) to listOf(winterTagId)
+                ) to listOf("Winter")
             )
 
             val createdPieceIds = mutableListOf<Long>()
-            pieces.forEach { (piece, tagIds) ->
+            pieces.forEach { (piece, tagNames) ->
                 val pieceId = pieceDao.insertPiece(piece)
                 createdPieceIds.add(pieceId)
-                tagIds.forEach { tagId ->
-                    pieceDao.insertPieceTagCrossRef(PieceTagCrossRef(pieceId, tagId))
+                // Add tags using the simplified helper method
+                tagNames.forEach { tagName ->
+                    pieceDao.addTagToPiece(pieceId, tagName)
                 }
             }
 
