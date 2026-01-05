@@ -28,6 +28,7 @@
  */
 package net.ottercloud.sliderschrank
 
+import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -81,6 +82,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import java.util.Locale
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import net.ottercloud.sliderschrank.data.AppDatabase
 import net.ottercloud.sliderschrank.data.model.OutfitWithPieces
@@ -158,7 +160,7 @@ private fun rememberHomeScreenState(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
+fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
     val context = LocalContext.current
     val isInPreview = LocalInspectionMode.current
     val settingsManager = remember { SettingsManager(context) }
@@ -196,6 +198,67 @@ fun HomeScreen(modifier: Modifier = Modifier) {
     }
 
     val state = rememberHomeScreenState(groupedPieces, savedOutfits, onToggleFavorite)
+
+    // Load outfit if loadOutfitId is provided
+    // Depend on groupedPieces to re-trigger when data loads
+    LaunchedEffect(loadOutfitId, groupedPieces.isNotEmpty()) {
+        Log.d(
+            "HomeScreen",
+            "LaunchedEffect triggered: loadOutfitId=$loadOutfitId, pagerStates.size=${state.pagerStates.size}, groupedPieces.size=${groupedPieces.size}"
+        )
+
+        if (loadOutfitId != null && loadOutfitId > 0 && database != null &&
+            state.pagerStates.isNotEmpty() && groupedPieces.isNotEmpty()
+        ) {
+            Log.d("HomeScreen", "Attempting to load outfit with ID: $loadOutfitId")
+
+            val outfitWithPieces = database.outfitDao().getOutfitWithPiecesById(
+                loadOutfitId
+            ).firstOrNull()
+
+            Log.d(
+                "HomeScreen",
+                "Loaded outfit: ${outfitWithPieces?.outfit?.id}, pieces: ${outfitWithPieces?.pieces?.size}"
+            )
+
+            outfitWithPieces?.let { outfit ->
+                // For each piece in the outfit, find its slot and scroll to it
+                // Use scrollToPage (instant) to load all pieces at once without animation delay
+                outfit.pieces.forEach { piece ->
+                    val slot = piece.slot
+                    val piecesForSlot = state.groupedPieces[slot]
+                    val pagerState = state.pagerStates[slot]
+
+                    Log.d(
+                        "HomeScreen",
+                        "Processing piece: ${piece.id}, slot: $slot, piecesForSlot.size=${piecesForSlot?.size}, pagerState=$pagerState"
+                    )
+
+                    if (piecesForSlot != null && pagerState != null) {
+                        val targetIndex = piecesForSlot.indexOfFirst { it.piece.id == piece.id }
+                        Log.d("HomeScreen", "Target index for piece ${piece.id}: $targetIndex")
+
+                        if (targetIndex >= 0) {
+                            Log.d("HomeScreen", "Scrolling to page $targetIndex for slot $slot")
+                            pagerState.scrollToPage(targetIndex)
+                        } else {
+                            Log.w("HomeScreen", "Piece ${piece.id} not found in slot $slot")
+                        }
+                    } else {
+                        Log.w(
+                            "HomeScreen",
+                            "Missing data for slot $slot: piecesForSlot=$piecesForSlot, pagerState=$pagerState"
+                        )
+                    }
+                }
+            }
+        } else {
+            Log.d(
+                "HomeScreen",
+                "Skipping outfit load: loadOutfitId=$loadOutfitId, database=$database, pagerStates.isEmpty=${state.pagerStates.isEmpty()}, groupedPieces.isEmpty=${groupedPieces.isEmpty()}"
+            )
+        }
+    }
 
     val onShuffleClick: () -> Unit = remember(scope, state) {
         {

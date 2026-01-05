@@ -28,6 +28,7 @@
  */
 package net.ottercloud.sliderschrank
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -52,6 +53,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 import net.ottercloud.sliderschrank.data.AppDatabase
@@ -131,7 +133,21 @@ fun Closet(navController: NavController, modifier: Modifier = Modifier) {
                     items = outfits,
                     imageUrlProvider = { it.outfit.imageUrl },
                     tagProvider = { it.tags.map { tag -> tag.name } },
-                    onItemClick = { /* Handle click */ },
+                    onItemClick = { outfitWithPieces ->
+                        Log.d(
+                            "ClosetScreen",
+                            "Outfit clicked: ID=${outfitWithPieces.outfit.id}, " +
+                                "pieces=${outfitWithPieces.pieces.map { it.id }}"
+                        )
+                        navController.navigate(
+                            "${AppDestinations.HOME.name}?outfitId=${outfitWithPieces.outfit.id}"
+                        ) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = false
+                            }
+                            launchSingleTop = true
+                        }
+                    },
                     isFavoriteProvider = { it.outfit.isFavorite },
                     onFavoriteClick = { outfitWithPieces ->
                         scope.launch {

@@ -29,6 +29,7 @@
 package net.ottercloud.sliderschrank
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -47,10 +48,12 @@ import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 
 class MainActivity : AppCompatActivity() {
@@ -78,7 +81,9 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
         navigationSuiteItems = {
             AppDestinations.entries.filter { it.navigatorVisible }.forEach { destination ->
                 val selected =
-                    currentDestination?.hierarchy?.any { it.route == destination.name } == true
+                    currentDestination?.hierarchy?.any {
+                        it.route?.startsWith(destination.name) == true
+                    } == true
                 item(
                     icon = {
                         Icon(
@@ -117,8 +122,21 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
                 startDestination = AppDestinations.HOME.name,
                 modifier = contentModifier
             ) {
-                composable(AppDestinations.HOME.name) {
-                    HomeScreen(modifier = Modifier.fillMaxSize())
+                composable(
+                    route = "${AppDestinations.HOME.name}?outfitId={outfitId}",
+                    arguments = listOf(
+                        navArgument("outfitId") {
+                            type = NavType.LongType
+                            defaultValue = -1L
+                        }
+                    )
+                ) { backStackEntry ->
+                    val outfitId = backStackEntry.arguments?.getLong("outfitId") ?: -1L
+                    Log.d("MainActivity", "HOME composable: outfitId=$outfitId")
+                    HomeScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        loadOutfitId = if (outfitId > 0) outfitId else null
+                    )
                 }
                 composable(AppDestinations.CAMERA.name) {
                     CameraScreen(modifier = Modifier.fillMaxSize())
