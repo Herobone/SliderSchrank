@@ -30,7 +30,6 @@ package net.ottercloud.sliderschrank
 
 import android.Manifest
 import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -199,7 +198,6 @@ fun CameraScreen(modifier: Modifier = Modifier) {
     }
 }
 
-@Suppress("UNUSED_PARAMETER")
 private fun handleImportFromGallery(context: Context) {
     // TODO: Hier wird später die GalleryService verwendet
 }

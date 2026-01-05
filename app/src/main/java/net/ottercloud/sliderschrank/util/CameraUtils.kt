@@ -79,40 +79,6 @@ fun takePictureForPreview(
     )
 }
 
-fun takePictureForPreview(
-    context: Context,
-    imageCapture: ImageCapture,
-    scope: CoroutineScope,
-    onCaptured: (Bitmap) -> Unit,
-    onError: () -> Unit
-) {
-    imageCapture.takePicture(
-        ContextCompat.getMainExecutor(context),
-        object : ImageCapture.OnImageCapturedCallback() {
-            override fun onCaptureSuccess(image: ImageProxy) {
-                val bitmap = image.toBitmap()
-                val rotationDegrees = image.imageInfo.rotationDegrees
-                image.close()
-
-                // Offload bitmap rotation to background thread to avoid UI jank
-                // Uses the provided lifecycle-aware scope to automatically cancel
-                // if the composable is disposed
-                scope.launch(Dispatchers.Default) {
-                    val rotatedBitmap = rotateBitmap(bitmap, rotationDegrees)
-                    withContext(Dispatchers.Main) {
-                        onCaptured(rotatedBitmap)
-                    }
-                }
-            }
-
-            override fun onError(exception: ImageCaptureException) {
-                Log.e(TAG, "Image capture failed: ${exception.message}", exception)
-                onError()
-            }
-        }
-    )
-}
-
 fun rotateBitmap(bitmap: Bitmap, rotationDegrees: Int): Bitmap {
     if (rotationDegrees == 0) return bitmap
     val matrix = Matrix().apply {
