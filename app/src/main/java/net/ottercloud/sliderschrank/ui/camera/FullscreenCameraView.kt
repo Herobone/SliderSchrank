@@ -32,17 +32,13 @@ import android.graphics.Bitmap
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.Preview
-import androidx.camera.core.resolutionselector.AspectRatioStrategy
-import androidx.camera.core.resolutionselector.ResolutionSelector
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
+import androidx.camera.view.CameraController
+import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,7 +50,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import net.ottercloud.sliderschrank.util.saveBitmapToMediaStore
 import net.ottercloud.sliderschrank.util.takePictureForPreview
@@ -75,63 +70,29 @@ fun FullscreenCameraView(
     // Use rememberUpdatedState to ensure LaunchedEffect always has the latest callback reference
     val currentOnCameraInitError by rememberUpdatedState(onCameraInitError)
 
-    var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var isFlashEnabled by remember { mutableStateOf(false) }
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var previewView by remember { mutableStateOf<PreviewView?>(null) }
-    var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var isCapturing by remember { mutableStateOf(false) }
 
-    // Cleanup Bitmap and Camera when composable is disposed to prevent memory/resource leak
-    DisposableEffect(Unit) {
-        onDispose {
-            capturedBitmap?.recycle()
-            cameraProvider?.unbindAll()
+    val cameraController = remember {
+        LifecycleCameraController(context).apply {
+            setEnabledUseCases(CameraController.IMAGE_CAPTURE)
+            cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
         }
     }
 
-    // Initialize camera provider when previewView is available
-    LaunchedEffect(previewView) {
-        val view = previewView ?: return@LaunchedEffect
-
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-        cameraProviderFuture.addListener({
-            try {
-                val provider = cameraProviderFuture.get()
-                cameraProvider = provider
-
-                val resolutionSelector = ResolutionSelector.Builder()
-                    .setAspectRatioStrategy(
-                        AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
-                    )
-                    .build()
-
-                val preview = Preview.Builder()
-                    .setResolutionSelector(resolutionSelector)
-                    .build().also {
-                        it.surfaceProvider = view.surfaceProvider
-                    }
-
-                val newImageCapture = ImageCapture.Builder()
-                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                    .setResolutionSelector(resolutionSelector)
-                    .build()
-                imageCapture = newImageCapture
-
-                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-                provider.unbindAll()
-                provider.bindToLifecycle(
-                    lifecycleOwner,
-                    cameraSelector,
-                    preview,
-                    newImageCapture
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Camera initialization failed", e)
-                currentOnCameraInitError()
-            }
-        }, ContextCompat.getMainExecutor(context))
+    // Cleanup Bitmap and Camera when composable is disposed to prevent memory/resource leak
+    DisposableEffect(lifecycleOwner) {
+        try {
+            cameraController.bindToLifecycle(lifecycleOwner)
+        } catch (e: Exception) {
+            Log.e(TAG, "Camera initialization failed", e)
+            currentOnCameraInitError()
+        }
+        onDispose {
+            capturedBitmap?.recycle()
+            cameraController.unbind()
+        }
     }
 
     Dialog(
@@ -177,32 +138,32 @@ fun FullscreenCameraView(
             } else {
                 // Camera Mode
                 CameraCaptureContent(
-                    onPreviewViewCreate = { previewView = it },
+                    onPreviewViewCreate = { view ->
+                        view.controller = cameraController
+                    },
                     isFlashEnabled = isFlashEnabled,
                     onFlashToggle = { isFlashEnabled = !isFlashEnabled },
                     isCapturing = isCapturing,
                     onCapture = {
-                        imageCapture?.let { capture ->
-                            isCapturing = true
-                            capture.flashMode = if (isFlashEnabled) {
-                                ImageCapture.FLASH_MODE_ON
-                            } else {
-                                ImageCapture.FLASH_MODE_OFF
-                            }
-                            takePictureForPreview(
-                                context = context,
-                                imageCapture = capture,
-                                scope = scope,
-                                onCaptured = { bitmap ->
-                                    capturedBitmap = bitmap
-                                    isCapturing = false
-                                },
-                                onError = {
-                                    isCapturing = false
-                                    onCaptureError()
-                                }
-                            )
+                        isCapturing = true
+                        cameraController.imageCaptureFlashMode = if (isFlashEnabled) {
+                            ImageCapture.FLASH_MODE_ON
+                        } else {
+                            ImageCapture.FLASH_MODE_OFF
                         }
+                        takePictureForPreview(
+                            context = context,
+                            cameraController = cameraController,
+                            scope = scope,
+                            onCaptured = { bitmap ->
+                                capturedBitmap = bitmap
+                                isCapturing = false
+                            },
+                            onError = {
+                                isCapturing = false
+                                onCaptureError()
+                            }
+                        )
                     },
                     onClose = {
                         capturedBitmap?.recycle()

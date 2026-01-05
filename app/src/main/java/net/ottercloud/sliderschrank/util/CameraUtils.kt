@@ -37,6 +37,7 @@ import android.util.Log
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
+import androidx.camera.view.LifecycleCameraController
 import androidx.core.content.ContextCompat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -46,6 +47,37 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraUtils"
+
+fun takePictureForPreview(
+    context: Context,
+    cameraController: LifecycleCameraController,
+    scope: CoroutineScope,
+    onCaptured: (Bitmap) -> Unit,
+    onError: () -> Unit
+) {
+    cameraController.takePicture(
+        ContextCompat.getMainExecutor(context),
+        object : ImageCapture.OnImageCapturedCallback() {
+            override fun onCaptureSuccess(image: ImageProxy) {
+                val bitmap = image.toBitmap()
+                val rotationDegrees = image.imageInfo.rotationDegrees
+                image.close()
+
+                scope.launch(Dispatchers.Default) {
+                    val rotatedBitmap = rotateBitmap(bitmap, rotationDegrees)
+                    withContext(Dispatchers.Main) {
+                        onCaptured(rotatedBitmap)
+                    }
+                }
+            }
+
+            override fun onError(exception: ImageCaptureException) {
+                Log.e(TAG, "Image capture failed: ${exception.message}", exception)
+                onError()
+            }
+        }
+    )
+}
 
 fun takePictureForPreview(
     context: Context,
