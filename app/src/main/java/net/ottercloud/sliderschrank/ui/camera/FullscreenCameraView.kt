@@ -26,7 +26,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank.camera
+package net.ottercloud.sliderschrank.ui.camera
 
 import android.graphics.Bitmap
 import android.util.Log
@@ -37,25 +37,9 @@ import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Circle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.FlashOff
-import androidx.compose.material.icons.filled.FlashOn
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -65,43 +49,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import net.ottercloud.sliderschrank.R
-import net.ottercloud.sliderschrank.ui.theme.KeepGreen
+import net.ottercloud.sliderschrank.util.saveBitmapToMediaStore
+import net.ottercloud.sliderschrank.util.takePictureForPreview
 
 private const val TAG = "FullscreenCameraView"
-
-@Composable
-private fun CloseButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(
-        onClick = onClick,
-        modifier = modifier
-            .size(48.dp)
-            .background(
-                color = Color.Black.copy(alpha = 0.5f),
-                shape = CircleShape
-            )
-    ) {
-        Icon(
-            imageVector = Icons.Default.Close,
-            contentDescription = stringResource(R.string.close),
-            tint = Color.White,
-            modifier = Modifier.size(28.dp)
-        )
-    }
-}
 
 @Composable
 fun FullscreenCameraView(
@@ -253,164 +211,6 @@ fun FullscreenCameraView(
                     }
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun PhotoPreviewContent(
-    bitmap: Bitmap,
-    onRetake: () -> Unit,
-    onKeep: () -> Unit,
-    onClose: () -> Unit
-) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        Image(
-            bitmap = bitmap.asImageBitmap(),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 70.dp),
-            contentScale = ContentScale.Fit
-        )
-
-        CloseButton(
-            onClick = onClose,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 48.dp)
-                .padding(horizontal = 48.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Retake Button
-            IconButton(
-                onClick = onRetake,
-                modifier = Modifier
-                    .size(64.dp)
-                    .background(color = Color.White, shape = CircleShape)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = stringResource(R.string.retake_photo),
-                    tint = Color.Gray,
-                    modifier = Modifier.size(36.dp)
-                )
-            }
-
-            // Keep Button
-            IconButton(
-                onClick = onKeep,
-                modifier = Modifier
-                    .size(64.dp)
-                    .background(color = KeepGreen, shape = CircleShape)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = stringResource(R.string.keep_photo),
-                    tint = Color.White,
-                    modifier = Modifier.size(36.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CameraCaptureContent(
-    onPreviewViewCreate: (PreviewView) -> Unit,
-    isFlashEnabled: Boolean,
-    onFlashToggle: () -> Unit,
-    isCapturing: Boolean,
-    onCapture: () -> Unit,
-    onClose: () -> Unit
-) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        AndroidView(
-            factory = { ctx ->
-                PreviewView(ctx).apply {
-                    implementationMode = PreviewView.ImplementationMode.PERFORMANCE
-                    scaleType = PreviewView.ScaleType.FIT_CENTER
-                }.also { onPreviewViewCreate(it) }
-            },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 70.dp)
-        )
-
-        CloseButton(
-            onClick = onClose,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 48.dp)
-                .padding(horizontal = 32.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Flash Toggle Button
-            IconButton(
-                onClick = onFlashToggle,
-                modifier = Modifier
-                    .size(56.dp)
-                    .background(color = Color.Black.copy(alpha = 0.5f), shape = CircleShape)
-            ) {
-                Icon(
-                    imageVector = if (isFlashEnabled) {
-                        Icons.Default.FlashOn
-                    } else {
-                        Icons.Default.FlashOff
-                    },
-                    contentDescription = if (isFlashEnabled) {
-                        stringResource(R.string.flash_on)
-                    } else {
-                        stringResource(R.string.flash_off)
-                    },
-                    tint = if (isFlashEnabled) Color.Yellow else Color.White,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-
-            // Capture Button
-            IconButton(
-                onClick = onCapture,
-                enabled = !isCapturing,
-                modifier = Modifier
-                    .size(80.dp)
-                    .background(
-                        color = if (isCapturing) Color.Gray else Color.White,
-                        shape = CircleShape
-                    )
-                    .padding(4.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Circle,
-                    contentDescription = stringResource(R.string.take_picture),
-                    tint = if (isCapturing) Color.Gray else Color.White,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            color = if (isCapturing) Color.Gray else Color.White,
-                            shape = CircleShape
-                        )
-                )
-            }
-
-            // Placeholder for symmetry
-            Box(modifier = Modifier.size(56.dp))
         }
     }
 }

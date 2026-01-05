@@ -45,4 +45,5 @@
     <string name="camera_initialization_failed_message">The camera could not be started. Please try again or restart the app.</string>
     <string name="image_capture_failed">Image capture failed</string>
     <string name="image_capture_failed_message">The photo could not be taken. Please try again.</string>
+    <string name="settings_unavailable">Settings are unavailable.</string>
 </resources>
