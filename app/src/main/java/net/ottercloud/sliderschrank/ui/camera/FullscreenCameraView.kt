@@ -52,6 +52,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import net.ottercloud.sliderschrank.util.saveBitmapToMediaStore
+import net.ottercloud.sliderschrank.util.saveBitmapWithBackgroundRemoval
 import net.ottercloud.sliderschrank.util.takePictureForPreview
 
 private const val TAG = "FullscreenCameraView"
@@ -116,22 +117,25 @@ fun FullscreenCameraView(
                         capturedBitmap?.recycle()
                         capturedBitmap = null
                     },
-                    onKeep = {
-                        capturedBitmap?.let { bitmap ->
-                            saveBitmapToMediaStore(
-                                context = context,
-                                bitmap = bitmap,
-                                onSuccess = {
-                                    bitmap.recycle()
-                                    onClose()
-                                },
-                                onError = {
-                                    bitmap.recycle()
-                                    capturedBitmap = null
-                                    onSaveError()
-                                }
-                            )
-                        }
+                    onKeep = { originalBitmap, processedBitmap ->
+                        // Verwende die neue duale Speicherfunktion
+                        saveBitmapWithBackgroundRemoval(
+                            context = context,
+                            originalBitmap = originalBitmap,
+                            processedBitmap = processedBitmap,
+                            onSuccess = { originalSaved, processedSaved ->
+                                originalBitmap.recycle()
+                                processedBitmap?.recycle()
+                                onClose()
+                                // Optional: Benutzer über Speicherstatus informieren
+                            },
+                            onError = { errorMessage ->
+                                originalBitmap.recycle()
+                                processedBitmap?.recycle()
+                                capturedBitmap = null
+                                onSaveError()
+                            }
+                        )
                     },
                     onClose = {
                         capturedBitmap?.recycle()

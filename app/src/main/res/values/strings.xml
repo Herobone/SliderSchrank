@@ -46,4 +46,11 @@
     <string name="image_capture_failed">Image capture failed</string>
     <string name="image_capture_failed_message">The photo could not be taken. Please try again.</string>
     <string name="settings_unavailable">Settings are unavailable.</string>
+    <string name="remove_background">Remove Background</string>
+    <string name="background_removal_processing">Processing image...</string>
+    <string name="background_removal_failed">Background removal failed</string>
+    <string name="original_and_processed_saved">Original and processed images saved</string>
+    <string name="only_original_saved">Only original image saved</string>
+    <string name="only_processed_saved">Only processed image saved</string>
+    <string name="toggle_background_removal">Toggle background removal</string>
 </resources>

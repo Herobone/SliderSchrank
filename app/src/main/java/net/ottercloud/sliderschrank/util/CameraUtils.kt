@@ -134,3 +134,82 @@ fun saveBitmapToMediaStore(
         onError()
     }
 }
+
+fun saveBitmapWithBackgroundRemoval(
+    context: Context,
+    originalBitmap: Bitmap,
+    processedBitmap: Bitmap?,
+    onSuccess: (originalSaved: Boolean, processedSaved: Boolean) -> Unit,
+    onError: (errorMessage: String) -> Unit
+) {
+    try {
+        val timestamp = LocalDateTime.now()
+            .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
+
+        var originalSaved = false
+        var processedSaved = false
+
+        // Original Bild speichern
+        val originalFileName = "SliderSchrank_Original_$timestamp.jpg"
+        val originalContentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, originalFileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SliderSchrank")
+        }
+
+        val originalUri = context.contentResolver.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            originalContentValues
+        )
+
+        if (originalUri != null) {
+            originalSaved =
+                context.contentResolver.openOutputStream(originalUri)?.use { outputStream ->
+                    originalBitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+                } ?: false
+
+            if (originalSaved) {
+                Log.i(TAG, "Original image saved to: $originalUri")
+            } else {
+                context.contentResolver.delete(originalUri, null, null)
+            }
+        }
+
+        // Bearbeitetes Bild speichern (falls vorhanden)
+        if (processedBitmap != null) {
+            val processedFileName = "SliderSchrank_NoBackground_$timestamp.png"
+            val processedContentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, processedFileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SliderSchrank")
+            }
+
+            val processedUri = context.contentResolver.insert(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                processedContentValues
+            )
+
+            if (processedUri != null) {
+                processedSaved =
+                    context.contentResolver.openOutputStream(processedUri)?.use { outputStream ->
+                        processedBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                    } ?: false
+
+                if (processedSaved) {
+                    Log.i(TAG, "Processed image saved to: $processedUri")
+                } else {
+                    context.contentResolver.delete(processedUri, null, null)
+                }
+            }
+        }
+
+        if (originalSaved || processedSaved) {
+            onSuccess(originalSaved, processedSaved)
+        } else {
+            onError("Failed to save any images")
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "Dual image save failed: ${e.message}", e)
+        onError("Save failed: ${e.message}")
+    }
+}

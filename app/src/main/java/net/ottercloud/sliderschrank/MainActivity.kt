@@ -29,6 +29,7 @@
 package net.ottercloud.sliderschrank
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -51,12 +52,28 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
+import net.ottercloud.sliderschrank.util.BackgroundRemovalProcessor
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // OpenCV im Hintergrund initialisieren
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val processor = BackgroundRemovalProcessor.getInstance()
+                val initialized = processor.initializeOpenCV(this@MainActivity)
+                Log.d("MainActivity", "OpenCV initialization: $initialized")
+            } catch (e: Exception) {
+                Log.e("MainActivity", "OpenCV initialization failed: ${e.message}", e)
+            }
+        }
+
         setContent {
             SliderSchrankTheme {
                 SliderSchrankApp(modifier = Modifier.fillMaxSize())
