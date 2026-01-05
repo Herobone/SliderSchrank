@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 import net.ottercloud.sliderschrank.util.LikeUtil
 import net.ottercloud.sliderschrank.util.SettingsManager
+import net.ottercloud.sliderschrank.util.performUiShuffle
 
 private val categoryOrder = listOf(
     GarmentType.HEAD,
