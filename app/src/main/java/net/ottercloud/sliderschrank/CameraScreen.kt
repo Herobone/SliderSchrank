@@ -42,6 +42,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,6 +71,7 @@ import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 @Composable
 fun CameraScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val prefs = context.getSharedPreferences("camera_prefs", Context.MODE_PRIVATE)
 
     var showPermissionDeniedDialog by remember { mutableStateOf(false) }
     var showPermissionPermanentlyDeniedDialog by remember { mutableStateOf(false) }
@@ -77,13 +79,40 @@ fun CameraScreen(modifier: Modifier = Modifier) {
     var showCameraInitErrorDialog by remember { mutableStateOf(false) }
     var showCaptureErrorDialog by remember { mutableStateOf(false) }
     var showFullscreenCamera by remember { mutableStateOf(false) }
+    var permissionRequestLaunched by remember { mutableStateOf(false) }
+    var permissionPermanentlyDenied by remember { mutableStateOf(false) }
 
     val cameraPermissionState = rememberPermissionState(
         permission = Manifest.permission.CAMERA
     )
 
-    if (cameraPermissionState.status.isGranted) {
-        resetPermissionFlag(context)
+    LaunchedEffect(cameraPermissionState.status.isGranted) {
+        if (cameraPermissionState.status.isGranted) {
+            resetPermissionFlag(context)
+        }
+    }
+
+    LaunchedEffect(cameraPermissionState.status) {
+        val hasAskedBefore = prefs.getBoolean("camera_permission_asked", false)
+        permissionPermanentlyDenied = hasAskedBefore &&
+            !cameraPermissionState.status.isGranted &&
+            !cameraPermissionState.status.shouldShowRationale
+
+        if (!permissionRequestLaunched) return@LaunchedEffect
+
+        when {
+            cameraPermissionState.status.isGranted -> {
+                permissionRequestLaunched = false
+            }
+            cameraPermissionState.status.shouldShowRationale -> {
+                showPermissionDeniedDialog = true
+                permissionRequestLaunched = false
+            }
+            else -> {
+                showPermissionPermanentlyDeniedDialog = true
+                permissionRequestLaunched = false
+            }
+        }
     }
 
     // Dialogs
@@ -158,20 +187,20 @@ fun CameraScreen(modifier: Modifier = Modifier) {
                 onClick = {
                     if (cameraPermissionState.status.isGranted) {
                         showFullscreenCamera = true
+                    } else if (permissionPermanentlyDenied) {
+                        showPermissionPermanentlyDeniedDialog = true
+                    } else if (cameraPermissionState.status.shouldShowRationale) {
+                        permissionRequestLaunched = true
+                        cameraPermissionState.launchPermissionRequest()
                     } else {
-                        if (cameraPermissionState.status.shouldShowRationale) {
+                        val hasAskedBefore = prefs.getBoolean("camera_permission_asked", false)
+
+                        if (!hasAskedBefore) {
+                            prefs.edit { putBoolean("camera_permission_asked", true) }
+                            permissionRequestLaunched = true
                             cameraPermissionState.launchPermissionRequest()
                         } else {
-                            val prefs =
-                                context.getSharedPreferences("camera_prefs", Context.MODE_PRIVATE)
-                            val hasAskedBefore = prefs.getBoolean("camera_permission_asked", false)
-
-                            if (!hasAskedBefore) {
-                                prefs.edit { putBoolean("camera_permission_asked", true) }
-                                cameraPermissionState.launchPermissionRequest()
-                            } else {
-                                showPermissionPermanentlyDeniedDialog = true
-                            }
+                            showPermissionPermanentlyDeniedDialog = true
                         }
                     }
                 },

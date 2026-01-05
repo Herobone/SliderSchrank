@@ -67,7 +67,7 @@ fun FullscreenCameraView(
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
 
-    // Use rememberUpdatedState to ensure LaunchedEffect always has the latest callback reference
+    // Use rememberUpdatedState to ensure DisposableEffect always has the latest callback reference
     val currentOnCameraInitError by rememberUpdatedState(onCameraInitError)
 
     var isFlashEnabled by remember { mutableStateOf(false) }
@@ -125,7 +125,11 @@ fun FullscreenCameraView(
                                     bitmap.recycle()
                                     onClose()
                                 },
-                                onError = onSaveError
+                                onError = {
+                                    bitmap.recycle()
+                                    capturedBitmap = null
+                                    onSaveError()
+                                }
                             )
                         }
                     },
