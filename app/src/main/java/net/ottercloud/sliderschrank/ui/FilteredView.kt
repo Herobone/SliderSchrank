@@ -66,8 +66,61 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import net.ottercloud.sliderschrank.data.model.AbstractClothing
 import net.ottercloud.sliderschrank.data.model.Slot
+
+// Helper function to filter items by slot
+private fun <T> filterBySlot(
+    items: List<T>,
+    slotFilter: Slot?,
+    slotProvider: (T) -> Slot?
+): List<T> = if (slotFilter != null) {
+    items.filter { slotProvider(it) == slotFilter }
+} else {
+    items
+}
+
+// Helper function to extract all filters (tags + categories)
+private fun <T> extractAllFilters(
+    items: List<T>,
+    tagProvider: (T) -> List<String>,
+    categoryProvider: (T) -> String?
+): List<String> = items.flatMap { item ->
+    val tags = tagProvider(item)
+    val category = categoryProvider(item)
+    if (category != null) tags + category else tags
+}.distinct().sorted()
+
+// Helper function to get item filters (tags + category)
+private fun <T> getItemFilters(
+    item: T,
+    tagProvider: (T) -> List<String>,
+    categoryProvider: (T) -> String?
+): List<String> {
+    val tags = tagProvider(item)
+    val category = categoryProvider(item)
+    return if (category != null) tags + category else tags
+}
+
+// Helper function to check if item matches selected filters
+private fun <T> matchesSelectedFilters(
+    item: T,
+    selectedFilters: List<String>,
+    tagProvider: (T) -> List<String>,
+    categoryProvider: (T) -> String?
+): Boolean {
+    if (selectedFilters.isEmpty()) return true
+    val itemFilters = getItemFilters(item, tagProvider, categoryProvider)
+    return selectedFilters.all { it in itemFilters }
+}
+
+// Helper function to toggle filter selection
+private fun toggleFilter(filter: String, selectedFilters: MutableList<String>) {
+    if (filter in selectedFilters) {
+        selectedFilters.remove(filter)
+    } else {
+        selectedFilters.add(filter)
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,86 +140,92 @@ fun <T> FilteredView(
 ) {
     val selectedFilters = remember { mutableStateListOf<String>() }
 
-    // First filter by slot to get the base items for this slot
     val slotFilteredItems = remember(items, slotFilter) {
-        if (slotFilter != null) {
-            items.filter { item ->
-                val itemSlot = slotProvider(item)
-                itemSlot == slotFilter
-            }
-        } else {
-            items
-        }
+        filterBySlot(items, slotFilter, slotProvider)
     }
 
-    // Extract all unique tags and categories from slot-filtered items only
     val allFilters = remember(slotFilteredItems) {
-        slotFilteredItems.flatMap { item ->
-            val tags = tagProvider(item)
-            val category = categoryProvider(item)
-            if (category != null) tags + category else tags
-        }.distinct().sorted()
+        extractAllFilters(slotFilteredItems, tagProvider, categoryProvider)
     }
 
     val filteredItems by remember(slotFilteredItems, selectedFilters.toList()) {
         derivedStateOf {
-            slotFilteredItems.filter { item ->
-                // Filter by Chips (Tags/Categories)
-                if (selectedFilters.isNotEmpty()) {
-                    val itemTags = tagProvider(item)
-                    val itemCategory = categoryProvider(item)
-                    val itemFilters = if (itemCategory != null) {
-                        itemTags + itemCategory
-                    } else {
-                        itemTags
-                    }
-                    // Check if item has ALL selected filters (AND logic)
-                    selectedFilters.all { it in itemFilters }
-                } else {
-                    true
+            slotFilteredItems
+                .filter {
+                    matchesSelectedFilters(it, selectedFilters, tagProvider, categoryProvider)
                 }
-            }.sortedByDescending { isFavoriteProvider(it) }
+                .sortedByDescending { isFavoriteProvider(it) }
         }
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        // Filter Chips
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(horizontal = 8.dp)
-        ) {
-            items(allFilters) { filter ->
-                val isSelected = filter in selectedFilters
-                FilterChip(selected = isSelected, onClick = {
-                    if (isSelected) {
-                        selectedFilters.remove(filter)
-                    } else {
-                        selectedFilters.add(filter)
-                    }
-                }, label = { Text(filter) })
-            }
-        }
+        FilterChipsRow(
+            allFilters,
+            selectedFilters.toList(),
+            onFilterToggle = { filter -> toggleFilter(filter, selectedFilters) }
+        )
+        ItemsGrid(
+            filteredItems,
+            imageUrlProvider,
+            isFavoriteProvider,
+            onFavoriteClick,
+            onItemClick,
+            gridMinSize,
+            cardAspectRatio
+        )
+    }
+}
 
-        // Grid of Items
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = gridMinSize.dp),
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(filteredItems) { item ->
-                ClothingItemCard(
-                    imageUrl = imageUrlProvider(item),
-                    isFavorite = isFavoriteProvider(item),
-                    onFavoriteClick = { onFavoriteClick(item) },
-                    onClick = { onItemClick(item) },
-                    aspectRatio = cardAspectRatio
-                )
-            }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterChipsRow(
+    allFilters: List<String>,
+    selectedFilters: List<String>,
+    onFilterToggle: (String) -> Unit
+) {
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 8.dp)
+    ) {
+        items(allFilters) { filter ->
+            val isSelected = filter in selectedFilters
+            FilterChip(
+                selected = isSelected,
+                onClick = { onFilterToggle(filter) },
+                label = { Text(filter) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun <T> ItemsGrid(
+    filteredItems: List<T>,
+    imageUrlProvider: (T) -> String,
+    isFavoriteProvider: (T) -> Boolean,
+    onFavoriteClick: (T) -> Unit,
+    onItemClick: (T) -> Unit,
+    gridMinSize: Int,
+    cardAspectRatio: Float
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = gridMinSize.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(filteredItems) { item ->
+            ClothingItemCard(
+                imageUrl = imageUrlProvider(item),
+                isFavorite = isFavoriteProvider(item),
+                onFavoriteClick = { onFavoriteClick(item) },
+                onClick = { onItemClick(item) },
+                aspectRatio = cardAspectRatio
+            )
         }
     }
 }

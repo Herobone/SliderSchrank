@@ -67,77 +67,22 @@ object OutfitImageGenerator {
     suspend fun generateOutfitImage(context: Context, pieces: List<Piece>): String =
         withContext(Dispatchers.IO) {
             try {
-                // Sort pieces by slot order (HEAD, TOP, BOTTOM, FEET, ACCESSORY)
                 val sortedPieces = pieces.sortedBy { getSlotOrder(it.slot) }
-
-                // Validate non-empty pieces list
                 if (sortedPieces.isEmpty()) {
                     Log.w(TAG, "No pieces provided, cannot generate outfit image")
                     return@withContext ""
                 }
 
-                // Calculate max height per piece defensively (avoid unreasonably small values)
-                val maxHeightPerPiece = maxOf(50, OUTPUT_HEIGHT / sortedPieces.size)
-
-                // Load and scale all bitmaps first
-                val scaledBitmaps = sortedPieces.mapNotNull { piece ->
-                    val bitmap = loadBitmapFromUri(context, piece.imageUrl)
-                    if (bitmap != null) {
-                        val scaledBitmap = scaleBitmapToFit(
-                            bitmap,
-                            OUTPUT_WIDTH,
-                            maxHeightPerPiece
-                        )
-                        if (scaledBitmap != bitmap) {
-                            bitmap.recycle()
-                        }
-
-                        // HEAD and FEET scale to 2/3 of size
-                        val finalBitmap = if (piece.slot == Slot.HEAD || piece.slot == Slot.FEET) {
-                            val smallerWidth = (scaledBitmap.width * 2 / 3)
-                            val smallerHeight = (scaledBitmap.height * 2 / 3)
-                            val smaller = scaledBitmap.scale(smallerWidth, smallerHeight)
-                            scaledBitmap.recycle()
-                            smaller
-                        } else {
-                            scaledBitmap
-                        }
-
-                        finalBitmap
-                    } else {
-                        Log.w(TAG, "Failed to load bitmap for piece: ${piece.imageUrl}")
-                        null
-                    }
-                }
-
+                val scaledBitmaps = loadAndScaleAllBitmaps(context, sortedPieces)
                 if (scaledBitmaps.isEmpty()) {
                     Log.w(TAG, "No bitmaps loaded, cannot generate outfit image")
                     return@withContext ""
                 }
 
-                // Calculate total height needed
-                val totalHeight = scaledBitmaps.sumOf { it.height }
-
-                // Create a bitmap with transparent background
-                val compositeBitmap = createBitmap(OUTPUT_WIDTH, totalHeight)
-                val canvas = Canvas(compositeBitmap)
-                // Note: Canvas is transparent by default, no need to clear
-
-                // Draw each piece vertically, one above the other
-                var currentY = 0f
-                for (bitmap in scaledBitmaps) {
-                    // Center the bitmap horizontally
-                    val left = (OUTPUT_WIDTH - bitmap.width) / 2f
-                    canvas.drawBitmap(bitmap, left, currentY, null)
-                    currentY += bitmap.height
-                    bitmap.recycle()
-                }
-
-                // Crop the image to remove excess transparent space (10px padding)
+                val compositeBitmap = createCompositeBitmap(scaledBitmaps)
                 val croppedBitmap = cropToContent(compositeBitmap, padding = 10)
                 compositeBitmap.recycle()
 
-                // Save the cropped bitmap to internal storage
                 val savedUri = saveBitmapToInternalStorage(context, croppedBitmap)
                 croppedBitmap.recycle()
 
@@ -147,6 +92,52 @@ object OutfitImageGenerator {
                 ""
             }
         }
+
+    /**
+     * Load and scale all bitmaps for the given pieces
+     */
+    private fun loadAndScaleAllBitmaps(context: Context, sortedPieces: List<Piece>): List<Bitmap> {
+        val maxHeightPerPiece = maxOf(50, OUTPUT_HEIGHT / sortedPieces.size)
+        return sortedPieces.mapNotNull { piece ->
+            val bitmap = loadBitmapFromUri(context, piece.imageUrl) ?: return@mapNotNull null
+            val scaledBitmap = scaleBitmapToFit(bitmap, OUTPUT_WIDTH, maxHeightPerPiece)
+            if (scaledBitmap != bitmap) bitmap.recycle()
+            applySlotSpecificScaling(scaledBitmap, piece.slot)
+        }
+    }
+
+    /**
+     * Apply slot-specific scaling (HEAD and FEET scale to 2/3 of size)
+     */
+    private fun applySlotSpecificScaling(bitmap: Bitmap, slot: Slot): Bitmap =
+        if (slot == Slot.HEAD || slot == Slot.FEET) {
+            val smallerWidth = bitmap.width * 2 / 3
+            val smallerHeight = bitmap.height * 2 / 3
+            val smaller = bitmap.scale(smallerWidth, smallerHeight)
+            bitmap.recycle()
+            smaller
+        } else {
+            bitmap
+        }
+
+    /**
+     * Create a composite bitmap by drawing all bitmaps vertically
+     */
+    private fun createCompositeBitmap(scaledBitmaps: List<Bitmap>): Bitmap {
+        val totalHeight = scaledBitmaps.sumOf { it.height }
+        val compositeBitmap = createBitmap(OUTPUT_WIDTH, totalHeight)
+        val canvas = Canvas(compositeBitmap)
+
+        var currentY = 0f
+        for (bitmap in scaledBitmaps) {
+            val left = (OUTPUT_WIDTH - bitmap.width) / 2f
+            canvas.drawBitmap(bitmap, left, currentY, null)
+            currentY += bitmap.height
+            bitmap.recycle()
+        }
+
+        return compositeBitmap
+    }
 
     /**
      * Load a bitmap from a URI string
@@ -190,76 +181,121 @@ object OutfitImageGenerator {
         val width = bitmap.width
         val height = bitmap.height
 
-        var minX = width
-        var minY = height
-        var maxX = -1
-        var maxY = -1
-        // Find the bounds of non-transparent pixels by scanning from edges inward
-        var contentFound = false
-        // Scan from top to find first row with content
-        topScan@ for (y in 0 until height) {
-            for (x in 0 until width) {
-                val pixel = bitmap[x, y]
-                val alpha = (pixel shr 24) and 0xff
-                if (alpha > 0) {
-                    minY = y
-                    contentFound = true
-                    break@topScan
-                }
-            }
-        }
-        // If nothing found yet, there's no content at all
-        if (!contentFound) {
-            return bitmap
-        }
-        // Scan from bottom to find last row with content
-        bottomScan@ for (y in height - 1 downTo 0) {
-            for (x in 0 until width) {
-                val pixel = bitmap[x, y]
-                val alpha = (pixel shr 24) and 0xff
-                if (alpha > 0) {
-                    maxY = y
-                    break@bottomScan
-                }
-            }
-        }
-        // Scan from left to find first column with content within the vertical band
-        leftScan@ for (x in 0 until width) {
-            for (y in minY..maxY) {
-                val pixel = bitmap[x, y]
-                val alpha = (pixel shr 24) and 0xff
-                if (alpha > 0) {
-                    minX = x
-                    break@leftScan
-                }
-            }
-        }
-        // Scan from right to find last column with content within the vertical band
-        rightScan@ for (x in width - 1 downTo 0) {
-            for (y in minY..maxY) {
-                val pixel = bitmap[x, y]
-                val alpha = (pixel shr 24) and 0xff
-                if (alpha > 0) {
-                    maxX = x
-                    break@rightScan
-                }
-            }
-        }
-        // If no valid content bounds found, return original bitmap
-        if (minX > maxX || minY > maxY) {
-            return bitmap
-        }
+        val minY = findTopContentEdge(bitmap, width, height)
+        if (minY == height) return bitmap // No content found
 
-        // Add padding and clamp to bitmap bounds
-        minX = maxOf(0, minX - padding)
-        minY = maxOf(0, minY - padding)
-        maxX = minOf(width - 1, maxX + padding)
-        maxY = minOf(height - 1, maxY + padding)
+        val maxY = findBottomContentEdge(bitmap, width, height)
+        val minX = findLeftContentEdge(bitmap, width, minY, maxY)
+        val maxX = findRightContentEdge(bitmap, width, minY, maxY)
 
-        val croppedWidth = maxX - minX + 1
-        val croppedHeight = maxY - minY + 1
+        if (minX > maxX || minY > maxY) return bitmap // No valid bounds
 
-        return Bitmap.createBitmap(bitmap, minX, minY, croppedWidth, croppedHeight)
+        return createCroppedBitmap(bitmap, width, height, minX, minY, maxX, maxY, padding)
+    }
+
+    /**
+     * Scan from top to find first row with non-transparent content
+     */
+    private fun findTopContentEdge(bitmap: Bitmap, width: Int, height: Int): Int {
+        for (y in 0 until height) {
+            if (hasPixelWithAlphaInRow(bitmap, 0, width - 1, y)) {
+                return y
+            }
+        }
+        return height
+    }
+
+    /**
+     * Scan from bottom to find last row with non-transparent content
+     */
+    private fun findBottomContentEdge(bitmap: Bitmap, width: Int, height: Int): Int {
+        for (y in height - 1 downTo 0) {
+            if (hasPixelWithAlphaInRow(bitmap, 0, width - 1, y)) {
+                return y
+            }
+        }
+        return -1
+    }
+
+    /**
+     * Scan from left to find first column with non-transparent content
+     */
+    private fun findLeftContentEdge(bitmap: Bitmap, width: Int, minY: Int, maxY: Int): Int {
+        for (x in 0 until width) {
+            if (hasPixelWithAlphaInRegion(bitmap, x, x, minY, maxY)) {
+                return x
+            }
+        }
+        return width
+    }
+
+    /**
+     * Scan from right to find last column with non-transparent content
+     */
+    private fun findRightContentEdge(bitmap: Bitmap, width: Int, minY: Int, maxY: Int): Int {
+        for (x in width - 1 downTo 0) {
+            if (hasPixelWithAlphaInRegion(bitmap, x, x, minY, maxY)) {
+                return x
+            }
+        }
+        return -1
+    }
+
+    /**
+     * Check if any pixel in the range [x1, x2] at row y has alpha > 0
+     */
+    private fun hasPixelWithAlphaInRow(bitmap: Bitmap, x1: Int, x2: Int, y: Int): Boolean {
+        for (x in x1..x2) {
+            if (getPixelAlpha(bitmap[x, y]) > 0) return true
+        }
+        return false
+    }
+
+    /**
+     * Check if any pixel in column [x1, x2] with y in [y1, y2] has alpha > 0
+     */
+    private fun hasPixelWithAlphaInRegion(
+        bitmap: Bitmap,
+        x1: Int,
+        x2: Int,
+        y1: Int,
+        y2: Int
+    ): Boolean {
+        for (x in x1..x2) {
+            for (y in y1..y2) {
+                if (getPixelAlpha(bitmap[x, y]) > 0) return true
+            }
+        }
+        return false
+    }
+
+    /**
+     * Extract alpha channel from pixel value
+     */
+    private fun getPixelAlpha(pixel: Int): Int = (pixel shr 24) and 0xff
+
+    /**
+     * Create cropped bitmap with padding applied and clamped to bounds
+     */
+    private fun createCroppedBitmap(
+        bitmap: Bitmap,
+        width: Int,
+        height: Int,
+        minX: Int,
+        minY: Int,
+        maxX: Int,
+        maxY: Int,
+        padding: Int
+    ): Bitmap {
+        val clampedMinX = maxOf(0, minX - padding)
+        val clampedMinY = maxOf(0, minY - padding)
+        val clampedMaxX = minOf(width - 1, maxX + padding)
+        val clampedMaxY = minOf(height - 1, maxY + padding)
+
+        val croppedWidth = clampedMaxX - clampedMinX + 1
+        val croppedHeight = clampedMaxY - clampedMinY + 1
+
+        return Bitmap.createBitmap(bitmap, clampedMinX, clampedMinY, croppedWidth, croppedHeight)
     }
 
     /**
