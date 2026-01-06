@@ -47,7 +47,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import net.ottercloud.sliderschrank.R
 
-@Suppress("ComposableModifierMissing")
 @Composable
 fun HomeScreenTopBar(
     isOutfitSaved: Boolean,

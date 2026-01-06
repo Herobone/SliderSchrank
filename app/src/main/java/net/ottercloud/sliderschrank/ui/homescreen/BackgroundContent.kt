@@ -41,7 +41,6 @@ import net.ottercloud.sliderschrank.AppBackground
 import net.ottercloud.sliderschrank.CheckedBackground
 import net.ottercloud.sliderschrank.R
 
-@Suppress("ComposableModifierMissing")
 @Composable
 fun BackgroundContent(background: AppBackground, modifier: Modifier = Modifier) {
     when (background) {

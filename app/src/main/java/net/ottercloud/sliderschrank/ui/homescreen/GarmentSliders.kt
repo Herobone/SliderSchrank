@@ -36,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import net.ottercloud.sliderschrank.data.model.Slot
 
-@Suppress("ComposableModifierMissing")
 @Composable
 fun GarmentSliders(
     state: HomeScreenState,
