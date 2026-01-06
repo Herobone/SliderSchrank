@@ -62,7 +62,24 @@ interface TagDao {
      */
     @Transaction
     suspend fun getOrCreateTag(name: String): Long {
+        // First, try to find an existing tag with the given name.
         val existingTag = getTagByName(name)
-        return existingTag?.id ?: insertTag(Tag(name = name))
+        if (existingTag != null) {
+            return existingTag.id
+        }
+
+        // Try to insert a new tag. With OnConflictStrategy.IGNORE this may return
+        // 0 or -1 if a conflict occurred (i.e. another insert won the race).
+        val newId = insertTag(Tag(name = name))
+        if (newId > 0L) {
+            return newId
+        }
+
+        // If insertion was ignored due to a conflict, retrieve the existing tag.
+        val tagAfterInsert = getTagByName(name)
+        requireNotNull(tagAfterInsert) {
+            "Failed to insert or retrieve tag for name: $name"
+        }
+        return tagAfterInsert.id
     }
 }

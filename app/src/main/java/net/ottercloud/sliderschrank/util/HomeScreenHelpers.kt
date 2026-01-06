@@ -45,13 +45,11 @@ import net.ottercloud.sliderschrank.ui.homescreen.HomeScreenState
 
 // Helper function to create LikeUtil
 fun createLikeUtil(context: Context, outfitDao: Any?, pieceDao: Any?): LikeUtil? =
-    if (outfitDao != null && pieceDao != null) {
-        @Suppress("UNCHECKED_CAST")
-        LikeUtil(context, outfitDao as OutfitDao, pieceDao as PieceDao)
+    if (outfitDao is OutfitDao && pieceDao is PieceDao) {
+        LikeUtil(context, outfitDao, pieceDao)
     } else {
         null
     }
-
 // Helper function to group pieces with empty HEAD option
 fun createGroupedPieces(pieces: List<PieceWithDetails>): Map<Slot, List<PieceWithDetails>> {
     val grouped = pieces.groupBy { it.piece.slot }.toMutableMap()

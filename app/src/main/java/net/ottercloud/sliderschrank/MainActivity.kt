@@ -82,7 +82,8 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
             AppDestinations.entries.filter { it.navigatorVisible }.forEach { destination ->
                 val selected =
                     currentDestination?.hierarchy?.any {
-                        it.route?.startsWith(destination.name) == true
+                        val route = it.route?.substringBefore("?")
+                        route == destination.name
                     } == true
                 item(
                     icon = {

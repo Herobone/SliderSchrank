@@ -147,7 +147,7 @@ fun Closet(navController: NavController, modifier: Modifier = Modifier) {
                             "${AppDestinations.HOME.name}?outfitId=${outfitWithPieces.outfit.id}"
                         ) {
                             popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = false
+                                saveState = true
                             }
                             launchSingleTop = true
                         }
