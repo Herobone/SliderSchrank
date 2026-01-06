@@ -37,7 +37,7 @@ import net.ottercloud.sliderschrank.data.dao.PieceDao
 import net.ottercloud.sliderschrank.data.model.Outfit
 import net.ottercloud.sliderschrank.data.model.OutfitWithPieces
 
-class LikeUtil(
+class FavoriteUtil(
     private val context: Context,
     private val outfitDao: OutfitDao,
     private val pieceDao: PieceDao
@@ -57,7 +57,7 @@ class LikeUtil(
 
         if (matchingOutfit != null) {
             outfitDao.deleteOutfit(matchingOutfit.outfit)
-            Log.d("LikeUtil", "Outfit removed: $pieceIds")
+            Log.d("FavoriteUtil", "Outfit removed: $pieceIds")
             return true
         } else {
             // Fetch the actual pieces to generate the composite image
@@ -70,7 +70,7 @@ class LikeUtil(
 
             // Handle image generation failure
             if (imageUrl.isEmpty()) {
-                Log.e("LikeUtil", "Failed to generate outfit image. Outfit will not be saved.")
+                Log.e("FavoriteUtil", "Failed to generate outfit image. Outfit will not be saved.")
                 return false
             }
 
@@ -81,7 +81,7 @@ class LikeUtil(
                 createdAt = Date()
             )
             outfitDao.insertOutfitWithDetails(newOutfit, pieceIds.toList(), emptyList())
-            Log.d("LikeUtil", "Outfit added: $pieceIds with image: $imageUrl")
+            Log.d("FavoriteUtil", "Outfit added: $pieceIds with image: $imageUrl")
             return true
         }
     }

@@ -57,8 +57,8 @@ import net.ottercloud.sliderschrank.ui.homescreen.rememberHomeScreenState
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 import net.ottercloud.sliderschrank.util.DummyDataGenerator
 import net.ottercloud.sliderschrank.util.SettingsManager
+import net.ottercloud.sliderschrank.util.createFavoriteUtil
 import net.ottercloud.sliderschrank.util.createGroupedPieces
-import net.ottercloud.sliderschrank.util.createLikeUtil
 import net.ottercloud.sliderschrank.util.createToggleFavoriteCallback
 import net.ottercloud.sliderschrank.util.loadOutfitPieces
 import net.ottercloud.sliderschrank.util.performUiShuffle
@@ -78,11 +78,13 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
 
     val outfitDao = database?.outfitDao()
     val pieceDao = database?.pieceDao()
-    val likeUtil = remember(outfitDao, pieceDao) {
-        createLikeUtil(context, outfitDao, pieceDao)
+    val favoriteUtil = remember(outfitDao, pieceDao) {
+        createFavoriteUtil(context, outfitDao, pieceDao)
     }
 
-    val savedOutfits by likeUtil?.favoriteOutfitsWithPieces?.collectAsState(initial = emptyList())
+    val savedOutfits by favoriteUtil?.favoriteOutfitsWithPieces?.collectAsState(
+        initial = emptyList()
+    )
         ?: remember { mutableStateOf(emptyList()) }
 
     LaunchedEffect(database) {
@@ -100,8 +102,8 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
 
     val failedToSaveOutfitMessage = stringResource(R.string.failed_to_save_outfit_please_try_again)
 
-    val onToggleFavorite = remember(scope, likeUtil) {
-        createToggleFavoriteCallback(context, scope, likeUtil, failedToSaveOutfitMessage)
+    val onToggleFavorite = remember(scope, favoriteUtil) {
+        createToggleFavoriteCallback(context, scope, favoriteUtil, failedToSaveOutfitMessage)
     }
 
     val state = rememberHomeScreenState(groupedPieces, savedOutfits, onToggleFavorite)

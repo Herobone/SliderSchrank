@@ -43,13 +43,14 @@ import net.ottercloud.sliderschrank.data.model.PieceWithDetails
 import net.ottercloud.sliderschrank.data.model.Slot
 import net.ottercloud.sliderschrank.ui.homescreen.HomeScreenState
 
-// Helper function to create LikeUtil
-fun createLikeUtil(context: Context, outfitDao: Any?, pieceDao: Any?): LikeUtil? =
+// Helper function to create FavoriteUtil
+fun createFavoriteUtil(context: Context, outfitDao: Any?, pieceDao: Any?): FavoriteUtil? =
     if (outfitDao is OutfitDao && pieceDao is PieceDao) {
-        LikeUtil(context, outfitDao, pieceDao)
+        FavoriteUtil(context, outfitDao, pieceDao)
     } else {
         null
     }
+
 // Helper function to group pieces with empty HEAD option
 fun createGroupedPieces(pieces: List<PieceWithDetails>): Map<Slot, List<PieceWithDetails>> {
     val grouped = pieces.groupBy { it.piece.slot }.toMutableMap()
@@ -76,11 +77,11 @@ fun createGroupedPieces(pieces: List<PieceWithDetails>): Map<Slot, List<PieceWit
 fun createToggleFavoriteCallback(
     context: Context,
     scope: CoroutineScope,
-    likeUtil: LikeUtil?,
+    favoriteUtil: FavoriteUtil?,
     failedMessage: String
 ): (List<OutfitWithPieces>, Set<Long>) -> Unit = { existing, current ->
     scope.launch {
-        val success = likeUtil?.toggleFavorite(existing, current) ?: false
+        val success = favoriteUtil?.toggleFavorite(existing, current) ?: false
         if (!success) {
             Toast.makeText(context, failedMessage, Toast.LENGTH_LONG).show()
         }
