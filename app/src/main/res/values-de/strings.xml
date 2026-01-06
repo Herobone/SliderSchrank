@@ -46,4 +46,14 @@
     <string name="reset">Zurücksetzen</string>
     <string name="delete_everything">Ja, alles löschen</string>
     <string name="settings_unavailable">Einstellungen nicht verfügbar</string>
+    <string name="failed_to_save_outfit_please_try_again">Outfit nicht konnte nicht gespeichert werden. Versuche es erneut!</string>
+    <string name="clothes">Klamotten</string>
+    <string name="outfits">Outfits</string>
+    <string name="select_slot">%s auswählen</string>
+    <string name="none">Nichts</string>
+    <string name="slot_head">Kopf</string>
+    <string name="slot_top">Oberteil</string>
+    <string name="slot_bottom">Unterteil</string>
+    <string name="slot_feet">Füße</string>
+    <string name="slot_accessory">Accessoire</string>
 </resources>

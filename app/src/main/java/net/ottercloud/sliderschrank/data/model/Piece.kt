@@ -68,4 +68,4 @@ data class Piece(
 
     @ColumnInfo(name = "category_id")
     val categoryId: Long? = null
-) : AbstractClothing()
+) : AbstractClothing

@@ -29,6 +29,7 @@
 package net.ottercloud.sliderschrank
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -81,7 +82,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import java.util.Locale
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import net.ottercloud.sliderschrank.data.AppDatabase
@@ -99,8 +99,13 @@ import net.ottercloud.sliderschrank.util.performUiShuffle
 
 private val slotOrder = listOf(Slot.HEAD, Slot.TOP, Slot.BOTTOM, Slot.FEET)
 
-private fun Slot.displayName(): String =
-    name.lowercase(Locale.getDefault()).replaceFirstChar { it.titlecase(Locale.getDefault()) }
+private fun getSlotDisplayNameResource(slot: Slot): Int = when (slot) {
+    Slot.HEAD -> R.string.slot_head
+    Slot.TOP -> R.string.slot_top
+    Slot.BOTTOM -> R.string.slot_bottom
+    Slot.FEET -> R.string.slot_feet
+    Slot.ACCESSORY -> R.string.slot_accessory
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 private class HomeScreenState(
@@ -225,10 +230,20 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
         grouped.toMap()
     }
 
+    val failedToSaveOutfitMessage = stringResource(R.string.failed_to_save_outfit_please_try_again)
+
     val onToggleFavorite: (List<OutfitWithPieces>, Set<Long>) -> Unit = remember(scope, likeUtil) {
         { existing, current ->
             scope.launch {
-                likeUtil?.toggleFavorite(existing, current)
+                val success = likeUtil?.toggleFavorite(existing, current) ?: false
+                if (!success) {
+                    // Show error message to user
+                    Toast.makeText(
+                        context,
+                        failedToSaveOutfitMessage,
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         }
     }
@@ -420,7 +435,10 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Select ${slot.displayName()}",
+                                text = stringResource(
+                                    R.string.select_slot,
+                                    stringResource(getSlotDisplayNameResource(slot))
+                                ),
                                 style = MaterialTheme.typography.titleLarge
                             )
                         }
@@ -521,7 +539,10 @@ fun GarmentSlider(
         HorizontalPager(
             state = pagerState,
             userScrollEnabled = isSwipeEnabled,
-            key = { page -> garments[page].piece.id },
+            key = { page ->
+                val id = garments[page].piece.id
+                if (id >= 0L) id else "empty-piece-$page"
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
@@ -577,7 +598,7 @@ fun GarmentItem(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "None",
+                        text = stringResource(R.string.none),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

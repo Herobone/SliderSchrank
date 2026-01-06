@@ -80,7 +80,7 @@ fun Closet(navController: NavController, modifier: Modifier = Modifier) {
     )
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Clothes", "Outfits")
+    val tabs = listOf(stringResource(R.string.clothes), stringResource(R.string.outfits))
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -99,7 +99,11 @@ fun Closet(navController: NavController, modifier: Modifier = Modifier) {
             )
         }
     ) { innerPadding ->
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
             PrimaryTabRow(selectedTabIndex = selectedTabIndex) {
                 tabs.forEachIndexed { index, title ->
                     Tab(

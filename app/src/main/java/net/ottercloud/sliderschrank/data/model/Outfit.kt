@@ -46,4 +46,4 @@ data class Outfit(
 
     @ColumnInfo(name = "created_at")
     override val createdAt: Date = Date()
-) : AbstractClothing()
+) : AbstractClothing

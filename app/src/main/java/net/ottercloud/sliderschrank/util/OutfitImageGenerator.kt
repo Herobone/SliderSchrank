@@ -70,6 +70,15 @@ object OutfitImageGenerator {
                 // Sort pieces by slot order (HEAD, TOP, BOTTOM, FEET, ACCESSORY)
                 val sortedPieces = pieces.sortedBy { getSlotOrder(it.slot) }
 
+                // Validate non-empty pieces list
+                if (sortedPieces.isEmpty()) {
+                    Log.w(TAG, "No pieces provided, cannot generate outfit image")
+                    return@withContext ""
+                }
+
+                // Calculate max height per piece defensively (avoid unreasonably small values)
+                val maxHeightPerPiece = maxOf(50, OUTPUT_HEIGHT / sortedPieces.size)
+
                 // Load and scale all bitmaps first
                 val scaledBitmaps = sortedPieces.mapNotNull { piece ->
                     val bitmap = loadBitmapFromUri(context, piece.imageUrl)
@@ -77,13 +86,13 @@ object OutfitImageGenerator {
                         val scaledBitmap = scaleBitmapToFit(
                             bitmap,
                             OUTPUT_WIDTH,
-                            OUTPUT_HEIGHT / sortedPieces.size
+                            maxHeightPerPiece
                         )
                         if (scaledBitmap != bitmap) {
                             bitmap.recycle()
                         }
 
-                        // Make HEAD and FEET 1/3 smaller (scale to 2/3 of size)
+                        // HEAD and FEET scale to 2/3 of size
                         val finalBitmap = if (piece.slot == Slot.HEAD || piece.slot == Slot.FEET) {
                             val smallerWidth = (scaledBitmap.width * 2 / 3)
                             val smallerHeight = (scaledBitmap.height * 2 / 3)
@@ -183,26 +192,60 @@ object OutfitImageGenerator {
 
         var minX = width
         var minY = height
-        var maxX = 0
-        var maxY = 0
-
-        // Find the bounds of non-transparent pixels
-        for (y in 0 until height) {
+        var maxX = -1
+        var maxY = -1
+        // Find the bounds of non-transparent pixels by scanning from edges inward
+        var contentFound = false
+        // Scan from top to find first row with content
+        topScan@ for (y in 0 until height) {
             for (x in 0 until width) {
                 val pixel = bitmap[x, y]
                 val alpha = (pixel shr 24) and 0xff
-
-                // If pixel is not fully transparent
                 if (alpha > 0) {
-                    if (x < minX) minX = x
-                    if (x > maxX) maxX = x
-                    if (y < minY) minY = y
-                    if (y > maxY) maxY = y
+                    minY = y
+                    contentFound = true
+                    break@topScan
                 }
             }
         }
-
-        // If no content found, return original bitmap
+        // If nothing found yet, there's no content at all
+        if (!contentFound) {
+            return bitmap
+        }
+        // Scan from bottom to find last row with content
+        bottomScan@ for (y in height - 1 downTo 0) {
+            for (x in 0 until width) {
+                val pixel = bitmap[x, y]
+                val alpha = (pixel shr 24) and 0xff
+                if (alpha > 0) {
+                    maxY = y
+                    break@bottomScan
+                }
+            }
+        }
+        // Scan from left to find first column with content within the vertical band
+        leftScan@ for (x in 0 until width) {
+            for (y in minY..maxY) {
+                val pixel = bitmap[x, y]
+                val alpha = (pixel shr 24) and 0xff
+                if (alpha > 0) {
+                    minX = x
+                    break@leftScan
+                }
+            }
+        }
+        // Scan from right to find last column with content within the vertical band
+        rightScan@ for (x in width - 1 downTo 0) {
+            for (y in minY..maxY) {
+                val pixel = bitmap[x, y]
+                val alpha = (pixel shr 24) and 0xff
+                if (alpha > 0) {
+                    maxX = x
+                    break@rightScan
+                }
+            }
+        }
+        // If no valid content bounds found, return original bitmap
         if (minX > maxX || minY > maxY) {
             return bitmap
         }

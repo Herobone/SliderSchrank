@@ -46,7 +46,10 @@ class LikeUtil(
     val favoriteOutfitsWithPieces: Flow<List<OutfitWithPieces>> =
         outfitDao.getAllOutfitsWithPieces()
 
-    suspend fun toggleFavorite(existingOutfits: List<OutfitWithPieces>, pieceIds: Set<Long>) {
+    suspend fun toggleFavorite(
+        existingOutfits: List<OutfitWithPieces>,
+        pieceIds: Set<Long>
+    ): Boolean {
         val matchingOutfit = existingOutfits.find { outfitWithPieces ->
             val outfitPieceIds = outfitWithPieces.pieces.map { it.id }.toSet()
             outfitPieceIds == pieceIds
@@ -55,6 +58,7 @@ class LikeUtil(
         if (matchingOutfit != null) {
             outfitDao.deleteOutfit(matchingOutfit.outfit)
             Log.d("LikeUtil", "Outfit removed: $pieceIds")
+            return true
         } else {
             // Fetch the actual pieces to generate the composite image
             val pieces = pieceIds.mapNotNull { pieceId ->
@@ -64,6 +68,12 @@ class LikeUtil(
             // Generate composite image from all pieces
             val imageUrl = OutfitImageGenerator.generateOutfitImage(context, pieces)
 
+            // Handle image generation failure
+            if (imageUrl.isEmpty()) {
+                Log.e("LikeUtil", "Failed to generate outfit image. Outfit will not be saved.")
+                return false
+            }
+
             // Create new outfit with the generated image
             val newOutfit = Outfit(
                 imageUrl = imageUrl,
@@ -72,6 +82,7 @@ class LikeUtil(
             )
             outfitDao.insertOutfitWithDetails(newOutfit, pieceIds.toList(), emptyList())
             Log.d("LikeUtil", "Outfit added: $pieceIds with image: $imageUrl")
+            return true
         }
     }
 }

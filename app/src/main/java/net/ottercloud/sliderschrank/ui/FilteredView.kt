@@ -66,6 +66,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import net.ottercloud.sliderschrank.data.model.AbstractClothing
 import net.ottercloud.sliderschrank.data.model.Slot
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -114,9 +115,7 @@ fun <T> FilteredView(
                 if (selectedFilters.isNotEmpty()) {
                     val itemTags = tagProvider(item)
                     val itemCategory = categoryProvider(item)
-                    val itemFilters = if (itemCategory !=
-                        null
-                    ) {
+                    val itemFilters = if (itemCategory != null) {
                         itemTags + itemCategory
                     } else {
                         itemTags
@@ -141,17 +140,13 @@ fun <T> FilteredView(
         ) {
             items(allFilters) { filter ->
                 val isSelected = filter in selectedFilters
-                FilterChip(
-                    selected = isSelected,
-                    onClick = {
-                        if (isSelected) {
-                            selectedFilters.remove(filter)
-                        } else {
-                            selectedFilters.add(filter)
-                        }
-                    },
-                    label = { Text(filter) }
-                )
+                FilterChip(selected = isSelected, onClick = {
+                    if (isSelected) {
+                        selectedFilters.remove(filter)
+                    } else {
+                        selectedFilters.add(filter)
+                    }
+                }, label = { Text(filter) })
             }
         }
 
@@ -194,10 +189,8 @@ fun ClothingItemCard(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(imageUrl)
-                    .crossfade(true)
-                    .build(),
+                model = ImageRequest.Builder(LocalContext.current).data(imageUrl)
+                    .crossfade(true).build(),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize()

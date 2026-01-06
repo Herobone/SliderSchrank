@@ -30,9 +30,9 @@ package net.ottercloud.sliderschrank.data.model
 
 import java.util.Date
 
-abstract class AbstractClothing {
-    abstract val id: Long
-    abstract val imageUrl: String
-    abstract val isFavorite: Boolean
-    abstract val createdAt: Date
+interface AbstractClothing {
+    val id: Long
+    val imageUrl: String
+    val isFavorite: Boolean
+    val createdAt: Date
 }

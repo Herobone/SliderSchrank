@@ -46,4 +46,14 @@
     <string name="image_capture_failed">Image capture failed</string>
     <string name="image_capture_failed_message">The photo could not be taken. Please try again.</string>
     <string name="settings_unavailable">Settings are unavailable.</string>
+    <string name="failed_to_save_outfit_please_try_again">Failed to save outfit. Please try again.</string>
+    <string name="clothes">Clothes</string>
+    <string name="outfits">Outfits</string>
+    <string name="select_slot">Select %s</string>
+    <string name="none">None</string>
+    <string name="slot_head">Head</string>
+    <string name="slot_top">Top</string>
+    <string name="slot_bottom">Bottom</string>
+    <string name="slot_feet">Feet</string>
+    <string name="slot_accessory">Accessory</string>
 </resources>
