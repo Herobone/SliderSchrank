@@ -45,6 +45,8 @@
     <string name="camera_initialization_failed_message">The camera could not be started. Please try again or restart the app.</string>
     <string name="image_capture_failed">Image capture failed</string>
     <string name="image_capture_failed_message">The photo could not be taken. Please try again.</string>
+    <string name="background_removal_failed">Background removal failed</string>
+    <string name="background_removal_failed_message">The background could not be removed from the image. Please try again with better lighting or a different background.</string>
     <string name="settings_unavailable">Settings are unavailable.</string>
     <string name="failed_to_save_outfit_please_try_again">Failed to save outfit. Please try again.</string>
     <string name="clothes">Clothes</string>

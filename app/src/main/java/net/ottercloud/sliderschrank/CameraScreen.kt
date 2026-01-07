@@ -59,6 +59,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
+import net.ottercloud.sliderschrank.ui.camera.BackgroundRemovalErrorDialog
 import net.ottercloud.sliderschrank.ui.camera.CameraInitErrorDialog
 import net.ottercloud.sliderschrank.ui.camera.CaptureErrorDialog
 import net.ottercloud.sliderschrank.ui.camera.FullscreenCameraView
@@ -78,6 +79,7 @@ fun CameraScreen(modifier: Modifier = Modifier) {
     var showSaveErrorDialog by remember { mutableStateOf(false) }
     var showCameraInitErrorDialog by remember { mutableStateOf(false) }
     var showCaptureErrorDialog by remember { mutableStateOf(false) }
+    var showBackgroundRemovalErrorDialog by remember { mutableStateOf(false) }
     var showFullscreenCamera by remember { mutableStateOf(false) }
     var permissionRequestLaunched by remember { mutableStateOf(false) }
     var permissionPermanentlyDenied by remember { mutableStateOf(false) }
@@ -139,6 +141,10 @@ fun CameraScreen(modifier: Modifier = Modifier) {
         CaptureErrorDialog(onDismiss = { showCaptureErrorDialog = false })
     }
 
+    if (showBackgroundRemovalErrorDialog) {
+        BackgroundRemovalErrorDialog(onDismiss = { showBackgroundRemovalErrorDialog = false })
+    }
+
     // Fullscreen Camera Dialog
     if (showFullscreenCamera) {
         FullscreenCameraView(
@@ -148,7 +154,8 @@ fun CameraScreen(modifier: Modifier = Modifier) {
                 showFullscreenCamera = false
                 showCameraInitErrorDialog = true
             },
-            onCaptureError = { showCaptureErrorDialog = true }
+            onCaptureError = { showCaptureErrorDialog = true },
+            onBackgroundRemovalError = { showBackgroundRemovalErrorDialog = true }
         )
     }
 

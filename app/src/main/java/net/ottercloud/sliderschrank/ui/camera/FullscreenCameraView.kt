@@ -83,7 +83,8 @@ fun FullscreenCameraView(
     onClose: () -> Unit,
     onSaveError: () -> Unit,
     onCameraInitError: () -> Unit,
-    onCaptureError: () -> Unit
+    onCaptureError: () -> Unit,
+    onBackgroundRemovalError: () -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -219,7 +220,7 @@ fun FullscreenCameraView(
                                         // Background removal failed
                                         Log.e(TAG, "Background removal failed")
                                         cleanupAndResetToCamera()
-                                        onSaveError()
+                                        onBackgroundRemovalError()
                                     }
                                 }
                                 processingJob = null
