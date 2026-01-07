@@ -96,31 +96,38 @@ object BackgroundRemover {
             // Rewind the buffer to read from the beginning
             confidenceMask.rewind()
 
+            // Use bulk pixel operations for better performance
+            val pixelCount = maskWidth * maskHeight
+            val originalPixels = IntArray(pixelCount)
+            val resultPixels = IntArray(pixelCount)
+
+            // Get all pixels at once
+            bitmap.getPixels(originalPixels, 0, maskWidth, 0, 0, maskWidth, maskHeight)
+
             // Process each pixel
-            for (y in 0 until maskHeight) {
-                for (x in 0 until maskWidth) {
-                    // Get confidence value (0.0 to 1.0)
-                    val confidence = confidenceMask.get()
+            for (i in 0 until pixelCount) {
+                // Get confidence value (0.0 to 1.0)
+                val confidence = confidenceMask.get()
+                val originalPixel = originalPixels[i]
 
-                    val originalPixel = bitmap.getPixel(x, y)
-
-                    if (confidence > CONFIDENCE_THRESHOLD) {
-                        // Foreground (clothing) - keep the pixel with full opacity
-                        // Use soft edge based on confidence for smoother edges
-                        val alpha = (confidence * 255).toInt().coerceIn(0, 255)
-                        val newPixel = Color.argb(
-                            alpha,
-                            Color.red(originalPixel),
-                            Color.green(originalPixel),
-                            Color.blue(originalPixel)
-                        )
-                        resultBitmap.setPixel(x, y, newPixel)
-                    } else {
-                        // Background - make transparent
-                        resultBitmap.setPixel(x, y, Color.TRANSPARENT)
-                    }
+                resultPixels[i] = if (confidence > CONFIDENCE_THRESHOLD) {
+                    // Foreground (clothing) - keep the pixel with full opacity
+                    // Use soft edge based on confidence for smoother edges
+                    val alpha = (confidence * 255).toInt().coerceIn(0, 255)
+                    Color.argb(
+                        alpha,
+                        Color.red(originalPixel),
+                        Color.green(originalPixel),
+                        Color.blue(originalPixel)
+                    )
+                } else {
+                    // Background - make transparent
+                    Color.TRANSPARENT
                 }
             }
+
+            // Set all pixels at once
+            resultBitmap.setPixels(resultPixels, 0, maskWidth, 0, 0, maskWidth, maskHeight)
 
             Log.i(TAG, "Background removal completed successfully")
             resultBitmap

@@ -57,6 +57,16 @@ import net.ottercloud.sliderschrank.R
 import net.ottercloud.sliderschrank.ui.controls.CloseButton
 import net.ottercloud.sliderschrank.ui.theme.KeepGreen
 
+/**
+ * Content for displaying a photo preview with options to retake, keep, or close.
+ *
+ * @param bitmap The bitmap to display
+ * @param onRetake Called when the user wants to retake the photo
+ * @param onKeep Called when the user wants to keep/save the photo
+ * @param onClose Called when the user wants to close the preview
+ * @param isProcessing When true, disables all buttons and shows a loading overlay.
+ *                     This prevents user interaction during background processing operations.
+ */
 @Composable
 internal fun PhotoPreviewContent(
     bitmap: Bitmap,

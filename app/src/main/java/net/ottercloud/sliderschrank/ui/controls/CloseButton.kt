@@ -42,6 +42,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import net.ottercloud.sliderschrank.R
 
+/**
+ * A circular close button with an X icon.
+ *
+ * @param onClick Called when the button is clicked
+ * @param modifier Modifier for the button
+ * @param enabled When false, the button is disabled and visually dimmed (reduced alpha and gray tint).
+ *                Use this to prevent closing during ongoing operations like image processing.
+ */
 @Composable
 fun CloseButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     IconButton(

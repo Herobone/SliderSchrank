@@ -52,6 +52,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.ottercloud.sliderschrank.util.BackgroundRemover
@@ -96,6 +97,7 @@ fun FullscreenCameraView(
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var transparentBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var isCapturing by remember { mutableStateOf(false) }
+    var processingJob by remember { mutableStateOf<Job?>(null) }
 
     val cameraController = remember {
         LifecycleCameraController(context).apply {
@@ -130,8 +132,10 @@ fun FullscreenCameraView(
             currentOnCameraInitError()
         }
         onDispose {
+            processingJob?.cancel()
             cleanupAllBitmaps()
             cameraController.unbind()
+            BackgroundRemover.close()
         }
     }
 
@@ -199,7 +203,7 @@ fun FullscreenCameraView(
                         onKeep = {
                             // Start background removal
                             viewState = CameraViewState.PROCESSING
-                            scope.launch {
+                            processingJob = scope.launch {
                                 val result = withContext(Dispatchers.Default) {
                                     BackgroundRemover.removeBackground(capturedBitmap!!)
                                 }
@@ -218,6 +222,7 @@ fun FullscreenCameraView(
                                         onSaveError()
                                     }
                                 }
+                                processingJob = null
                             }
                         },
                         onClose = {
@@ -257,15 +262,16 @@ fun FullscreenCameraView(
                                         onClose()
                                     },
                                     onError = {
-                                        cleanupAndResetToCamera()
+                                        // Keep the transparent bitmap so user can retry saving
                                         onSaveError()
                                     }
                                 )
                             }
                         },
                         onClose = {
-                            // User cancels, go back to camera
-                            cleanupAndResetToCamera()
+                            // User cancels - cleanup and close without state reset
+                            cleanupAllBitmaps()
+                            onClose()
                         }
                     )
                 }
