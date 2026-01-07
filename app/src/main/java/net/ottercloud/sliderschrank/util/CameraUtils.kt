@@ -91,6 +91,48 @@ fun rotateBitmap(bitmap: Bitmap, rotationDegrees: Int): Bitmap {
     return rotatedBitmap
 }
 
+/**
+ * Internal helper function to save a bitmap to the media store.
+ *
+ * @param context The context
+ * @param bitmap The bitmap to save
+ * @param fileName The file name
+ * @param mimeType The MIME type (e.g., "image/jpeg" or "image/png")
+ * @param format The compression format
+ * @param quality The compression quality (0-100)
+ * @return The URI of the saved image, or null if saving failed
+ */
+private fun saveBitmapInternal(
+    context: Context,
+    bitmap: Bitmap,
+    fileName: String,
+    mimeType: String,
+    format: Bitmap.CompressFormat,
+    quality: Int
+): android.net.Uri? {
+    val contentValues = ContentValues().apply {
+        put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+        put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SliderSchrank")
+    }
+
+    val uri = context.contentResolver.insert(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        contentValues
+    ) ?: return null
+
+    val success = context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+        bitmap.compress(format, quality, outputStream)
+    } ?: false
+
+    if (!success) {
+        context.contentResolver.delete(uri, null, null)
+        return null
+    }
+
+    return uri
+}
+
 fun saveBitmapToMediaStore(
     context: Context,
     bitmap: Bitmap,
@@ -102,31 +144,20 @@ fun saveBitmapToMediaStore(
             .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
         val fileName = "SliderSchrank_$timestamp.jpg"
 
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SliderSchrank")
-        }
-
-        val uri = context.contentResolver.insert(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            contentValues
+        val uri = saveBitmapInternal(
+            context,
+            bitmap,
+            fileName,
+            "image/jpeg",
+            Bitmap.CompressFormat.JPEG,
+            85
         )
 
         if (uri != null) {
-            val success = context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
-            } ?: false
-            if (success) {
-                Log.i(TAG, "Camera saved Image to: $uri")
-                onSuccess()
-            } else {
-                Log.e(TAG, "Failed to compress bitmap")
-                context.contentResolver.delete(uri, null, null)
-                onError()
-            }
+            Log.i(TAG, "Camera saved Image to: $uri")
+            onSuccess()
         } else {
-            Log.e(TAG, "Failed to create MediaStore entry")
+            Log.e(TAG, "Failed to save bitmap")
             onError()
         }
     } catch (e: Exception) {
@@ -157,28 +188,17 @@ fun saveBitmapsWithBackgroundRemoval(
 
         // Save original image as JPEG
         val originalFileName = "SliderSchrank_${timestamp}_original.jpg"
-        val originalContentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, originalFileName)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SliderSchrank")
-        }
-
-        val originalUri = context.contentResolver.insert(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            originalContentValues
+        val originalUri = saveBitmapInternal(
+            context,
+            originalBitmap,
+            originalFileName,
+            "image/jpeg",
+            Bitmap.CompressFormat.JPEG,
+            85
         )
 
-        val originalSaved = if (originalUri != null) {
-            context.contentResolver.openOutputStream(originalUri)?.use { outputStream ->
-                originalBitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
-            } ?: false
-        } else {
-            false
-        }
-
-        if (!originalSaved) {
+        if (originalUri == null) {
             Log.e(TAG, "Failed to save original image")
-            originalUri?.let { context.contentResolver.delete(it, null, null) }
             onError()
             return
         }
@@ -188,28 +208,17 @@ fun saveBitmapsWithBackgroundRemoval(
         // Save transparent image as PNG (if available)
         if (transparentBitmap != null) {
             val transparentFileName = "SliderSchrank_${timestamp}_transparent.png"
-            val transparentContentValues = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, transparentFileName)
-                put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SliderSchrank")
-            }
-
-            val transparentUri = context.contentResolver.insert(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                transparentContentValues
+            val transparentUri = saveBitmapInternal(
+                context,
+                transparentBitmap,
+                transparentFileName,
+                "image/png",
+                Bitmap.CompressFormat.PNG,
+                100
             )
 
-            val transparentSaved = if (transparentUri != null) {
-                context.contentResolver.openOutputStream(transparentUri)?.use { outputStream ->
-                    transparentBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                } ?: false
-            } else {
-                false
-            }
-
-            if (!transparentSaved) {
+            if (transparentUri == null) {
                 Log.e(TAG, "Failed to save transparent image")
-                transparentUri?.let { context.contentResolver.delete(it, null, null) }
                 // Still call onSuccess because original was saved
                 onSuccess()
                 return
@@ -246,31 +255,20 @@ fun saveTransparentBitmapToMediaStore(
             .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
         val fileName = "SliderSchrank_$timestamp.png"
 
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SliderSchrank")
-        }
-
-        val uri = context.contentResolver.insert(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            contentValues
+        val uri = saveBitmapInternal(
+            context,
+            bitmap,
+            fileName,
+            "image/png",
+            Bitmap.CompressFormat.PNG,
+            100
         )
 
         if (uri != null) {
-            val success = context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-            } ?: false
-            if (success) {
-                Log.i(TAG, "Saved transparent image to: $uri")
-                onSuccess()
-            } else {
-                Log.e(TAG, "Failed to compress transparent bitmap")
-                context.contentResolver.delete(uri, null, null)
-                onError()
-            }
+            Log.i(TAG, "Saved transparent image to: $uri")
+            onSuccess()
         } else {
-            Log.e(TAG, "Failed to create MediaStore entry for transparent image")
+            Log.e(TAG, "Failed to save transparent bitmap")
             onError()
         }
     } catch (e: Exception) {
