@@ -106,7 +106,7 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
         createToggleFavoriteCallback(context, scope, favoriteUtil, failedToSaveOutfitMessage)
     }
 
-    val state = rememberHomeScreenState(groupedPieces, savedOutfits, onToggleFavorite)
+    val state = rememberHomeScreenState(groupedPieces, savedOutfits)
 
     LaunchedEffect(loadOutfitId, pieces.isNotEmpty()) {
         if (shouldLoadOutfit(loadOutfitId, database, state.pagerStates, pieces)) {
@@ -132,6 +132,8 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
     }
 
     var selectedSlotForPicker by remember { mutableStateOf<Slot?>(null) }
+    var showLayerDialog by remember { mutableStateOf(false) }
+    var editingLayerIndex by remember { mutableStateOf<Int?>(null) }
 
     Box(modifier = modifier.fillMaxSize()) {
         BackgroundContent(background)
@@ -144,14 +146,33 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
             HomeScreenTopBar(
                 isOutfitSaved = state.isCurrentOutfitSaved,
                 onShuffleClick = onShuffleClick,
-                onFavoriteClick = state::onFavoriteClick
+                onFavoriteClick = { state.onFavoriteClick(onToggleFavorite) }
             )
 
             GarmentSliders(
                 state,
                 onSelectSlot = { slot ->
-                    selectedSlotForPicker = slot
+                    if (slot.supportsLayers()) {
+                        showLayerDialog = true
+                    } else {
+                        selectedSlotForPicker = slot
+                    }
                 }
+            )
+        }
+
+        if (showLayerDialog) {
+            net.ottercloud.sliderschrank.ui.homescreen.LayerView(
+                layers = state.getVisibleLayers(),
+                onReorder = state::reorderLayers,
+                onDelete = state::removeLayer,
+                onAdd = state::addLayer,
+                onSelectLayer = { index ->
+                    editingLayerIndex = index
+                    selectedSlotForPicker =
+                        Slot.entries.firstOrNull { it.supportsLayers() } ?: Slot.TOP
+                },
+                onDismiss = { showLayerDialog = false }
             )
         }
 
@@ -162,7 +183,17 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
                 state = state,
                 scope = scope,
                 database = database,
-                onDismiss = { selectedSlotForPicker = null }
+                onDismiss = {
+                    selectedSlotForPicker = null
+                    editingLayerIndex = null
+                },
+                onPieceSelect = if (slot.supportsLayers() && editingLayerIndex != null) {
+                    { piece ->
+                        editingLayerIndex?.let { state.updateLayerPiece(it, piece) }
+                    }
+                } else {
+                    null
+                }
             )
         }
     }

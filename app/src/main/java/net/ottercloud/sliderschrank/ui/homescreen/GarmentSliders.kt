@@ -67,7 +67,12 @@ fun GarmentSliders(
                     onPieceClick = { onSelectSlot(it.piece.slot) },
                     modifier = Modifier
                         .weight(weight)
-                        .fillMaxWidth()
+                        .fillMaxWidth(),
+                    backgroundLayers = if (slot.supportsLayers()) {
+                        state.backgroundLayers
+                    } else {
+                        emptyList()
+                    }
                 )
             }
         }

@@ -49,6 +49,7 @@
     <string name="failed_to_save_outfit_please_try_again">Outfit konnte nicht gespeichert werden. Versuche es erneut!</string>
     <string name="clothes">Klamotten</string>
     <string name="outfits">Outfits</string>
+    <string name="reorder_layer">Schicht neu anordnen</string>
     <string name="select_slot">%s auswählen</string>
     <string name="none">Nichts</string>
     <string name="slot_head">Kopf</string>
@@ -56,4 +57,7 @@
     <string name="slot_bottom">Unterteil</string>
     <string name="slot_feet">Füße</string>
     <string name="slot_accessory">Accessoire</string>
+    <string name="layers">Schichten</string>
+    <string name="add_layer">Schicht hinzufügen</string>
+    <string name="remove_layer">Schicht entfernen</string>
 </resources>
