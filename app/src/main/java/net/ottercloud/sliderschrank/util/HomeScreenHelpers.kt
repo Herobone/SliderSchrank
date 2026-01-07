@@ -53,6 +53,9 @@ fun createFavoriteUtil(context: Context, outfitDao: Any?, pieceDao: Any?): Favor
 
 // Helper function to group pieces with empty HEAD option
 fun createGroupedPieces(pieces: List<PieceWithDetails>): Map<Slot, List<PieceWithDetails>> {
+    if (pieces.isEmpty()) {
+        return emptyMap()
+    }
     val grouped = pieces.groupBy { it.piece.slot }.toMutableMap()
     val headPieces = grouped[Slot.HEAD].orEmpty().toMutableList()
 

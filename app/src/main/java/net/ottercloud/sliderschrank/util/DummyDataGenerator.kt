@@ -170,7 +170,7 @@ object DummyDataGenerator {
                     createdPieceIds[0], // HEAD
                     createdPieceIds[3], // TOP
                     createdPieceIds[9], // BOTTOM
-                    createdPieceIds[10] // FEET
+                    createdPieceIds[13] // FEET
                 )
 
                 // Fetch the actual pieces to generate the image
