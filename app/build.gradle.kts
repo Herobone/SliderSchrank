@@ -78,6 +78,9 @@ dependencies {
     implementation(libs.camerax.view)
     implementation(libs.accompanist.permissions)
 
+    // ML Kit Subject Segmentation
+    implementation(libs.mlkit.subject.segmentation)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

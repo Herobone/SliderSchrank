@@ -51,10 +51,31 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import net.ottercloud.sliderschrank.util.saveBitmapToMediaStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import net.ottercloud.sliderschrank.util.BackgroundRemover
+import net.ottercloud.sliderschrank.util.saveTransparentBitmapToMediaStore
 import net.ottercloud.sliderschrank.util.takePictureForPreview
 
 private const val TAG = "FullscreenCameraView"
+
+/**
+ * Represents the current state of the camera view flow.
+ */
+private enum class CameraViewState {
+    /** Camera is active, ready to capture */
+    CAMERA,
+
+    /** Showing preview of captured original image */
+    ORIGINAL_PREVIEW,
+
+    /** Processing background removal */
+    PROCESSING,
+
+    /** Showing preview of image with removed background */
+    TRANSPARENT_PREVIEW
+}
 
 @Composable
 fun FullscreenCameraView(
@@ -70,8 +91,10 @@ fun FullscreenCameraView(
     // Use rememberUpdatedState to ensure DisposableEffect always has the latest callback reference
     val currentOnCameraInitError by rememberUpdatedState(onCameraInitError)
 
+    var viewState by remember { mutableStateOf(CameraViewState.CAMERA) }
     var isFlashEnabled by remember { mutableStateOf(false) }
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var transparentBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var isCapturing by remember { mutableStateOf(false) }
 
     val cameraController = remember {
@@ -79,6 +102,23 @@ fun FullscreenCameraView(
             setEnabledUseCases(CameraController.IMAGE_CAPTURE)
             cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
         }
+    }
+
+    // Helper function to clean up all bitmaps and reset state
+    fun cleanupAndResetToCamera() {
+        capturedBitmap?.recycle()
+        capturedBitmap = null
+        transparentBitmap?.recycle()
+        transparentBitmap = null
+        viewState = CameraViewState.CAMERA
+    }
+
+    // Helper function to clean up all bitmaps
+    fun cleanupAllBitmaps() {
+        capturedBitmap?.recycle()
+        capturedBitmap = null
+        transparentBitmap?.recycle()
+        transparentBitmap = null
     }
 
     // Cleanup Bitmap and Camera when composable is disposed to prevent memory/resource leak
@@ -90,7 +130,7 @@ fun FullscreenCameraView(
             currentOnCameraInitError()
         }
         onDispose {
-            capturedBitmap?.recycle()
+            cleanupAllBitmaps()
             cameraController.unbind()
         }
     }
@@ -108,73 +148,127 @@ fun FullscreenCameraView(
                 .fillMaxSize()
                 .background(Color.Black)
         ) {
-            if (capturedBitmap != null) {
-                // Photo Preview Mode
-                PhotoPreviewContent(
-                    bitmap = capturedBitmap!!,
-                    onRetake = {
-                        capturedBitmap?.recycle()
-                        capturedBitmap = null
-                    },
-                    onKeep = {
-                        capturedBitmap?.let { bitmap ->
-                            saveBitmapToMediaStore(
+            when (viewState) {
+                CameraViewState.CAMERA -> {
+                    // Camera Mode
+                    CameraCaptureContent(
+                        onPreviewViewCreate = { view ->
+                            view.controller = cameraController
+                        },
+                        isFlashEnabled = isFlashEnabled,
+                        onFlashToggle = { isFlashEnabled = !isFlashEnabled },
+                        isCapturing = isCapturing,
+                        onCapture = {
+                            isCapturing = true
+                            cameraController.imageCaptureFlashMode = if (isFlashEnabled) {
+                                ImageCapture.FLASH_MODE_ON
+                            } else {
+                                ImageCapture.FLASH_MODE_OFF
+                            }
+                            takePictureForPreview(
                                 context = context,
-                                bitmap = bitmap,
-                                onSuccess = {
-                                    bitmap.recycle()
-                                    onClose()
+                                cameraController = cameraController,
+                                scope = scope,
+                                onCaptured = { bitmap ->
+                                    capturedBitmap = bitmap
+                                    isCapturing = false
+                                    viewState = CameraViewState.ORIGINAL_PREVIEW
                                 },
                                 onError = {
-                                    bitmap.recycle()
-                                    capturedBitmap = null
-                                    onSaveError()
+                                    isCapturing = false
+                                    onCaptureError()
                                 }
                             )
+                        },
+                        onClose = {
+                            cleanupAllBitmaps()
+                            onClose()
                         }
-                    },
-                    onClose = {
-                        capturedBitmap?.recycle()
-                        capturedBitmap = null
-                        onClose()
-                    }
-                )
-            } else {
-                // Camera Mode
-                CameraCaptureContent(
-                    onPreviewViewCreate = { view ->
-                        view.controller = cameraController
-                    },
-                    isFlashEnabled = isFlashEnabled,
-                    onFlashToggle = { isFlashEnabled = !isFlashEnabled },
-                    isCapturing = isCapturing,
-                    onCapture = {
-                        isCapturing = true
-                        cameraController.imageCaptureFlashMode = if (isFlashEnabled) {
-                            ImageCapture.FLASH_MODE_ON
-                        } else {
-                            ImageCapture.FLASH_MODE_OFF
-                        }
-                        takePictureForPreview(
-                            context = context,
-                            cameraController = cameraController,
-                            scope = scope,
-                            onCaptured = { bitmap ->
-                                capturedBitmap = bitmap
-                                isCapturing = false
-                            },
-                            onError = {
-                                isCapturing = false
-                                onCaptureError()
+                    )
+                }
+
+                CameraViewState.ORIGINAL_PREVIEW -> {
+                    // Original Photo Preview - user decides to keep or retake
+                    PhotoPreviewContent(
+                        bitmap = capturedBitmap!!,
+                        onRetake = {
+                            capturedBitmap?.recycle()
+                            capturedBitmap = null
+                            viewState = CameraViewState.CAMERA
+                        },
+                        onKeep = {
+                            // Start background removal
+                            viewState = CameraViewState.PROCESSING
+                            scope.launch {
+                                val result = withContext(Dispatchers.Default) {
+                                    BackgroundRemover.removeBackground(capturedBitmap!!)
+                                }
+
+                                withContext(Dispatchers.Main) {
+                                    if (result != null) {
+                                        transparentBitmap = result
+                                        // Recycle the original bitmap as we don't need it anymore
+                                        capturedBitmap?.recycle()
+                                        capturedBitmap = null
+                                        viewState = CameraViewState.TRANSPARENT_PREVIEW
+                                    } else {
+                                        // Background removal failed
+                                        Log.e(TAG, "Background removal failed")
+                                        cleanupAndResetToCamera()
+                                        onSaveError()
+                                    }
+                                }
                             }
-                        )
-                    },
-                    onClose = {
-                        capturedBitmap?.recycle()
-                        capturedBitmap = null
-                        onClose()
-                    }
-                )
+                        },
+                        onClose = {
+                            cleanupAllBitmaps()
+                            onClose()
+                        }
+                    )
+                }
+
+                CameraViewState.PROCESSING -> {
+                    // Show processing indicator while removing background
+                    PhotoPreviewContent(
+                        bitmap = capturedBitmap!!,
+                        onRetake = { /* Disabled during processing */ },
+                        onKeep = { /* Disabled during processing */ },
+                        onClose = { /* Disabled during processing */ },
+                        isProcessing = true
+                    )
+                }
+
+                CameraViewState.TRANSPARENT_PREVIEW -> {
+                    // Transparent Photo Preview - user decides to save or discard
+                    PhotoPreviewContent(
+                        bitmap = transparentBitmap!!,
+                        onRetake = {
+                            // User doesn't like the result, go back to camera
+                            cleanupAndResetToCamera()
+                        },
+                        onKeep = {
+                            // Save only the transparent image
+                            transparentBitmap?.let { bitmap ->
+                                saveTransparentBitmapToMediaStore(
+                                    context = context,
+                                    bitmap = bitmap,
+                                    onSuccess = {
+                                        cleanupAllBitmaps()
+                                        onClose()
+                                    },
+                                    onError = {
+                                        cleanupAndResetToCamera()
+                                        onSaveError()
+                                    }
+                                )
+                            }
+                        },
+                        onClose = {
+                            // User cancels, go back to camera
+                            cleanupAndResetToCamera()
+                        }
+                    )
+                }
             }
         }
     }
