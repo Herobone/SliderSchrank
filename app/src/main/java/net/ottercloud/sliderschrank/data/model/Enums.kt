@@ -47,5 +47,10 @@ enum class Slot {
     TOP,
     BOTTOM,
     FEET,
-    ACCESSORY
+    ACCESSORY;
+
+    fun supportsLayers(): Boolean {
+        // Currently only TOP slot supports layering
+        return this == TOP
+    }
 }

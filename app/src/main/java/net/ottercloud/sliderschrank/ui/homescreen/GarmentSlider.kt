@@ -30,12 +30,9 @@ package net.ottercloud.sliderschrank.ui.homescreen
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -51,6 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -59,6 +57,9 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import net.ottercloud.sliderschrank.R
 import net.ottercloud.sliderschrank.data.model.PieceWithDetails
+
+private const val LAYER_SCALE_FACTOR = 0.15f
+private const val LAYER_OFFSET_DP = 100
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -69,13 +70,40 @@ fun GarmentSlider(
     lockedPieceIds: Set<Long>,
     onLockClick: (Long) -> Unit,
     onPieceClick: (PieceWithDetails) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    backgroundLayers: List<PieceWithDetails> = emptyList()
 ) {
-    Column(
-        modifier = modifier.fillMaxHeight(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
+        val showCardBackground = backgroundLayers.isEmpty()
+
+        // Render background layers
+        backgroundLayers.forEachIndexed { index, layer ->
+            val reverseIndex = backgroundLayers.size - index
+
+            val scale = 1f - (reverseIndex * LAYER_SCALE_FACTOR)
+
+            val translationOffset = (reverseIndex * LAYER_OFFSET_DP).dp
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        // Move left
+                        translationX = -translationOffset.toPx()
+                        translationY = 0f
+                    }
+            ) {
+                // Background layers are just images (transparent background)
+                GarmentContent(layer)
+            }
+        }
+
         HorizontalPager(
             state = pagerState,
             userScrollEnabled = isSwipeEnabled,
@@ -84,8 +112,7 @@ fun GarmentSlider(
                 if (id >= 0L) id else "empty-piece-$page"
             },
             modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
+                .fillMaxSize()
         ) { page ->
             val garment = garments[page]
 
@@ -105,7 +132,9 @@ fun GarmentSlider(
                     garment = garment,
                     isLocked = lockedPieceIds.contains(garment.piece.id),
                     onLockClick = itemOnLockClick,
-                    onGarmentClick = itemOnPieceClick
+                    onGarmentClick = itemOnPieceClick,
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+                    showBackground = showCardBackground
                 )
             }
         }
@@ -118,59 +147,66 @@ fun GarmentItem(
     isLocked: Boolean,
     onLockClick: () -> Unit,
     onGarmentClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+    showBackground: Boolean = true
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 8.dp)
+            .padding(contentPadding)
+            .clickable(onClick = onGarmentClick)
     ) {
-        Card(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(onClick = onGarmentClick)
-        ) {
-            // Check if this is the empty HEAD piece
-            if (garment.piece.id == -1L) {
-                // Display "None" for empty piece
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.none),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(garment.piece.imageUrl)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = garment.category?.name ?: garment.piece.id.toString(),
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit
-                )
-            }
-        }
-        // Don't show lock icon for empty piece
-        if (garment.piece.id != -1L) {
-            IconButton(
-                onClick = onLockClick,
-                modifier = Modifier.align(Alignment.TopEnd)
+        if (showBackground) {
+            Card(
+                modifier = Modifier.fillMaxSize()
             ) {
-                Icon(
-                    imageVector = if (isLocked) Icons.Default.Lock else Icons.Default.LockOpen,
-                    contentDescription = stringResource(R.string.lock_item),
-                    tint = if (isLocked) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    }
-                )
+                GarmentContent(garment)
             }
+        } else {
+            GarmentContent(garment)
         }
+
+        IconButton(
+            onClick = onLockClick,
+            modifier = Modifier.align(Alignment.TopEnd)
+        ) {
+            Icon(
+                imageVector = if (isLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                contentDescription = stringResource(R.string.lock_item),
+                tint = if (isLocked) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun GarmentContent(garment: PieceWithDetails, modifier: Modifier = Modifier) {
+    if (garment.piece.id == -1L) {
+        // Display "None" for empty piece
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = stringResource(R.string.none),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    } else {
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(garment.piece.imageUrl)
+                .crossfade(true)
+                .build(),
+            contentDescription = garment.category?.name ?: garment.piece.id.toString(),
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Fit
+        )
     }
 }
