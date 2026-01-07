@@ -47,12 +47,18 @@ import java.util.Date
     ],
     indices = [Index(value = ["category_id"])]
 )
-class Piece(
+data class Piece(
     @PrimaryKey(autoGenerate = true)
     override val id: Long = 0,
-    imageUrl: String,
-    isFavorite: Boolean = false,
-    createdAt: Date = Date(),
+
+    @ColumnInfo(name = "image_url")
+    override val imageUrl: String,
+
+    @ColumnInfo(name = "is_favorite")
+    override val isFavorite: Boolean = false,
+
+    @ColumnInfo(name = "created_at")
+    override val createdAt: Date = Date(),
 
     @ColumnInfo(name = "colour")
     val colour: Colour,
@@ -62,4 +68,4 @@ class Piece(
 
     @ColumnInfo(name = "category_id")
     val categoryId: Long? = null
-) : AbstractClothing(id, imageUrl, isFavorite, createdAt)
+) : AbstractClothing

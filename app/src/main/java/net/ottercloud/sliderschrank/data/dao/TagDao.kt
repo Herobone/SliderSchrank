@@ -33,6 +33,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import net.ottercloud.sliderschrank.data.model.Tag
@@ -42,7 +43,10 @@ interface TagDao {
     @Query("SELECT * FROM tags ORDER BY name ASC")
     fun getAllTags(): Flow<List<Tag>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Query("SELECT * FROM tags WHERE name = :name LIMIT 1")
+    suspend fun getTagByName(name: String): Tag?
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTag(tag: Tag): Long
 
     @Update
@@ -50,4 +54,32 @@ interface TagDao {
 
     @Delete
     suspend fun deleteTag(tag: Tag)
+
+    /**
+     * Get or create a tag by name. If a tag with the given name exists,
+     * return its ID. Otherwise, create a new tag and return its ID.
+     * Uses IGNORE strategy to avoid replacing existing tags.
+     */
+    @Transaction
+    suspend fun getOrCreateTag(name: String): Long {
+        // First, try to find an existing tag with the given name.
+        val existingTag = getTagByName(name)
+        if (existingTag != null) {
+            return existingTag.id
+        }
+
+        // Try to insert a new tag. With OnConflictStrategy.IGNORE this may return
+        // 0 or -1 if a conflict occurred (i.e. another insert won the race).
+        val newId = insertTag(Tag(name = name))
+        if (newId > 0L) {
+            return newId
+        }
+
+        // If insertion was ignored due to a conflict, retrieve the existing tag.
+        val tagAfterInsert = getTagByName(name)
+        requireNotNull(tagAfterInsert) {
+            "Failed to insert or retrieve tag for name: $name"
+        }
+        return tagAfterInsert.id
+    }
 }

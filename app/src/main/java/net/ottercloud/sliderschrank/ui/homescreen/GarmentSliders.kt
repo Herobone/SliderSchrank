@@ -26,38 +26,49 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank.util
+package net.ottercloud.sliderschrank.ui.homescreen
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.pager.PagerState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import net.ottercloud.sliderschrank.data.model.PieceWithDetails
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import net.ottercloud.sliderschrank.data.model.Slot
 
-@OptIn(ExperimentalFoundationApi::class)
-fun performUiShuffle(
-    scope: CoroutineScope,
-    pagerStates: Map<Slot, PagerState>,
-    groupedPieces: Map<Slot, List<PieceWithDetails>>,
-    lockedPieceIds: Set<Long>
+@Composable
+fun GarmentSliders(
+    state: HomeScreenState,
+    onSelectSlot: (Slot) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    scope.launch {
-        pagerStates.forEach { (slot, pagerState) ->
-            val pieces = groupedPieces[slot].orEmpty()
+    Column(
+        modifier = modifier.fillMaxHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        getSlotOrder().forEach { slot ->
+            val piecesForSlot = state.groupedPieces[slot].orEmpty()
+            val pagerState = state.pagerStates[slot]
+            val weight = when (slot) {
+                Slot.HEAD, Slot.FEET -> 0.2f
+                else -> 0.3f
+            }
 
-            if (pieces.isNotEmpty() && pagerState.pageCount > 1) {
-                val currentPiece = pieces.getOrNull(pagerState.currentPage)
+            if (piecesForSlot.isNotEmpty() && pagerState != null) {
+                val currentPiece = piecesForSlot.getOrNull(pagerState.currentPage)
+                val isCurrentItemLocked = currentPiece?.piece?.id in state.lockedPieceIds
 
-                if (currentPiece != null && currentPiece.piece.id !in lockedPieceIds) {
-                    var newPage = pagerState.currentPage
-
-                    while (newPage == pagerState.currentPage) {
-                        newPage = (0 until pagerState.pageCount).random()
-                    }
-
-                    pagerState.animateScrollToPage(newPage)
-                }
+                GarmentSlider(
+                    garments = piecesForSlot,
+                    pagerState = pagerState,
+                    isSwipeEnabled = !isCurrentItemLocked,
+                    lockedPieceIds = state.lockedPieceIds,
+                    onLockClick = state::onLockClick,
+                    onPieceClick = { onSelectSlot(it.piece.slot) },
+                    modifier = Modifier
+                        .weight(weight)
+                        .fillMaxWidth()
+                )
             }
         }
     }

@@ -26,36 +26,53 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank.util
+package net.ottercloud.sliderschrank.data.model
 
-import android.util.Log
-import androidx.compose.runtime.mutableStateListOf
+import net.ottercloud.sliderschrank.data.dao.PieceDao
 
-object LikeUtil {
+/**
+ * Extension functions to make tag management easier on PieceWithDetails
+ */
 
-    val favoriteOutfits = mutableStateListOf<Set<Int>>()
-
-    fun addFavorite(outfitIds: Set<Int>) {
-        if (!favoriteOutfits.contains(outfitIds)) {
-            favoriteOutfits.add(outfitIds)
-            Log.d("LikeUtil", "Outfit added: $outfitIds")
-        }
-    }
-
-    fun removeFavorite(outfitIds: Set<Int>) {
-        val removed = favoriteOutfits.remove(outfitIds)
-        if (removed) {
-            Log.d("LikeUtil", "Outfit removed: $outfitIds")
-        }
-    }
-
-    fun isFavorite(outfitIds: Set<Int>): Boolean = favoriteOutfits.contains(outfitIds)
-
-    fun toggleFavorite(outfitIds: Set<Int>) {
-        if (isFavorite(outfitIds)) {
-            removeFavorite(outfitIds)
-        } else {
-            addFavorite(outfitIds)
-        }
+/**
+ * Add tags to this piece. Tags are referenced by name and will be created if they don't exist.
+ * @param dao The PieceDao to use for database operations
+ * @param tagNames List of tag names to add
+ */
+suspend fun PieceWithDetails.addTags(dao: PieceDao, tagNames: List<String>) {
+    tagNames.forEach { tagName ->
+        dao.addTagToPiece(piece.id, tagName)
     }
 }
+
+/**
+ * Remove tags from this piece.
+ * @param dao The PieceDao to use for database operations
+ * @param tagNames List of tag names to remove
+ */
+suspend fun PieceWithDetails.removeTags(dao: PieceDao, tagNames: List<String>) {
+    val tagsToRemove = tags.filter { it.name in tagNames }
+    tagsToRemove.forEach { tag ->
+        dao.removeTagFromPiece(piece.id, tag.id)
+    }
+}
+
+/**
+ * Set tags on this piece (replaces all existing tags).
+ * @param dao The PieceDao to use for database operations
+ * @param tagNames List of tag names to set
+ */
+suspend fun PieceWithDetails.setTags(dao: PieceDao, tagNames: List<String>) {
+    // Remove all existing tags
+    tags.forEach { tag ->
+        dao.removeTagFromPiece(piece.id, tag.id)
+    }
+    // Add new tags
+    addTags(dao, tagNames)
+}
+
+/**
+ * Get tag names as a list of strings
+ */
+val PieceWithDetails.tagNames: List<String>
+    get() = tags.map { it.name }

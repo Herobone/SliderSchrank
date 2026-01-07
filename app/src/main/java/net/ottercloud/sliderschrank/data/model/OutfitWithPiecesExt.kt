@@ -28,22 +28,51 @@
  */
 package net.ottercloud.sliderschrank.data.model
 
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import java.util.Date
+import net.ottercloud.sliderschrank.data.dao.OutfitDao
 
-@Entity(tableName = "outfits")
-data class Outfit(
-    @PrimaryKey(autoGenerate = true)
-    override val id: Long = 0,
+/**
+ * Extension functions to make tag management easier on OutfitWithPieces
+ */
 
-    @ColumnInfo(name = "image_url")
-    override val imageUrl: String,
+/**
+ * Add tags to this outfit. Tags are referenced by name and will be created if they don't exist.
+ * @param dao The OutfitDao to use for database operations
+ * @param tagNames List of tag names to add
+ */
+suspend fun OutfitWithPieces.addTags(dao: OutfitDao, tagNames: List<String>) {
+    tagNames.forEach { tagName ->
+        dao.addTagToOutfit(outfit.id, tagName)
+    }
+}
 
-    @ColumnInfo(name = "is_favorite")
-    override val isFavorite: Boolean = false,
+/**
+ * Remove tags from this outfit.
+ * @param dao The OutfitDao to use for database operations
+ * @param tagNames List of tag names to remove
+ */
+suspend fun OutfitWithPieces.removeTags(dao: OutfitDao, tagNames: List<String>) {
+    val tagsToRemove = tags.filter { it.name in tagNames }
+    tagsToRemove.forEach { tag ->
+        dao.removeTagFromOutfit(outfit.id, tag.id)
+    }
+}
 
-    @ColumnInfo(name = "created_at")
-    override val createdAt: Date = Date()
-) : AbstractClothing
+/**
+ * Set tags on this outfit (replaces all existing tags).
+ * @param dao The OutfitDao to use for database operations
+ * @param tagNames List of tag names to set
+ */
+suspend fun OutfitWithPieces.setTags(dao: OutfitDao, tagNames: List<String>) {
+    // Remove all existing tags
+    tags.forEach { tag ->
+        dao.removeTagFromOutfit(outfit.id, tag.id)
+    }
+    // Add new tags
+    addTags(dao, tagNames)
+}
+
+/**
+ * Get tag names as a list of strings
+ */
+val OutfitWithPieces.tagNames: List<String>
+    get() = tags.map { it.name }

@@ -68,6 +68,9 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
+    // Coil
+    implementation(libs.coil.compose)
+
     // CameraX
     implementation(libs.camerax.core)
     implementation(libs.camerax.camera2)

@@ -26,24 +26,48 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank.data.model
+package net.ottercloud.sliderschrank.ui.homescreen
 
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import java.util.Date
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import net.ottercloud.sliderschrank.AppBackground
+import net.ottercloud.sliderschrank.CheckedBackground
+import net.ottercloud.sliderschrank.R
 
-@Entity(tableName = "outfits")
-data class Outfit(
-    @PrimaryKey(autoGenerate = true)
-    override val id: Long = 0,
-
-    @ColumnInfo(name = "image_url")
-    override val imageUrl: String,
-
-    @ColumnInfo(name = "is_favorite")
-    override val isFavorite: Boolean = false,
-
-    @ColumnInfo(name = "created_at")
-    override val createdAt: Date = Date()
-) : AbstractClothing
+@Composable
+fun BackgroundContent(background: AppBackground, modifier: Modifier = Modifier) {
+    when (background) {
+        AppBackground.CORK -> {
+            Image(
+                painter = painterResource(id = R.drawable.kork),
+                contentDescription = null,
+                modifier = modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
+        AppBackground.GRAY -> {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(Color.Gray)
+            )
+        }
+        AppBackground.WHITE -> {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(Color.White)
+            )
+        }
+        AppBackground.CHECKERED -> {
+            CheckedBackground(modifier = modifier.fillMaxSize())
+        }
+    }
+}
