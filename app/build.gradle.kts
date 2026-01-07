@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.view)
     implementation(libs.accompanist.permissions)
+    implementation(libs.reorderable)
 
     // ML Kit Subject Segmentation
     implementation(libs.mlkit.subject.segmentation)

@@ -69,7 +69,8 @@ fun PiecePickerDialog(
     state: HomeScreenState,
     scope: CoroutineScope,
     database: AppDatabase?,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onPieceSelect: ((PieceWithDetails) -> Unit)? = null
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -105,13 +106,17 @@ fun PiecePickerDialog(
                     imageUrlProvider = { it.piece.imageUrl },
                     tagProvider = { it.tags.map { tag -> tag.name } },
                     onItemClick = { pieceWithDetails ->
-                        val targetIndex = state.groupedPieces[slot]
-                            ?.indexOfFirst { it.piece.id == pieceWithDetails.piece.id }
-                            ?: -1
+                        if (onPieceSelect != null) {
+                            onPieceSelect(pieceWithDetails)
+                        } else {
+                            val targetIndex = state.groupedPieces[slot]
+                                ?.indexOfFirst { it.piece.id == pieceWithDetails.piece.id }
+                                ?: -1
 
-                        if (targetIndex >= 0) {
-                            scope.launch {
-                                state.pagerStates[slot]?.animateScrollToPage(targetIndex)
+                            if (targetIndex >= 0) {
+                                scope.launch {
+                                    state.pagerStates[slot]?.animateScrollToPage(targetIndex)
+                                }
                             }
                         }
                         onDismiss()

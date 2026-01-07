@@ -104,15 +104,29 @@ fun shouldLoadOutfit(
 suspend fun loadOutfitPieces(outfit: OutfitWithPieces, state: HomeScreenState) {
     val slotsInOutfit = outfit.pieces.map { it.slot }.toSet()
 
-    outfit.pieces.forEach { piece ->
-        val slot = piece.slot
+    // Clear background layers initially
+    state.setLayers(emptyList())
+
+    val piecesBySlot = outfit.pieces.groupBy { it.slot }
+
+    piecesBySlot.forEach { (slot, pieces) ->
         val piecesForSlot = state.groupedPieces[slot]
         val pagerState = state.pagerStates[slot]
 
         if (piecesForSlot != null && pagerState != null) {
-            val targetIndex = piecesForSlot.indexOfFirst { it.piece.id == piece.id }
-            if (targetIndex >= 0) {
-                pagerState.scrollToPage(targetIndex)
+            if (slot.supportsLayers() && pieces.size > 1) {
+                // Restore layers for supported slot
+                val layerPieces = pieces.mapNotNull { p ->
+                    piecesForSlot.find { it.piece.id == p.id }
+                }
+
+                state.setLayers(layerPieces)
+            } else {
+                val piece = pieces.first()
+                val targetIndex = piecesForSlot.indexOfFirst { it.piece.id == piece.id }
+                if (targetIndex >= 0) {
+                    pagerState.scrollToPage(targetIndex)
+                }
             }
         }
     }
