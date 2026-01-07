@@ -37,6 +37,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -68,6 +70,7 @@ import coil.compose.AsyncImage
 import net.ottercloud.sliderschrank.R
 import net.ottercloud.sliderschrank.data.model.PieceWithDetails
 import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.ReorderableLazyListState
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
 private data class UiLayer(val uniqueId: String, val piece: PieceWithDetails)
@@ -85,87 +88,140 @@ fun LayerView(
     ModalBottomSheet(
         onDismissRequest = onDismiss
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.layers),
-                style = MaterialTheme.typography.titleLarge
-            )
+        LayerListContent(
+            layers = layers,
+            onReorder = onReorder,
+            onDelete = onDelete,
+            onAdd = onAdd,
+            onSelectLayer = onSelectLayer
+        )
+    }
+}
 
-            // Deduplicate items with unique IDs
-            val uiLayers = remember(layers) {
-                val counts = mutableMapOf<Long, Int>()
-                layers.asReversed().map { pieceWithDetails ->
-                    val id = pieceWithDetails.piece.id
-                    val count = counts.getOrDefault(id, 0)
-                    counts[id] = count + 1
-                    UiLayer("${id}_$count", pieceWithDetails)
-                }
-            }
+@Composable
+private fun LayerListContent(
+    layers: List<PieceWithDetails>,
+    onReorder: (Int, Int) -> Unit,
+    onDelete: (Int) -> Unit,
+    onAdd: () -> Unit,
+    onSelectLayer: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.layers),
+            style = MaterialTheme.typography.titleLarge
+        )
 
-            // Local list to handle smooth animations during drag
-            var localLayers by remember { mutableStateOf(uiLayers) }
+        val uiLayers = rememberUniqueLayers(layers)
+        var localLayers by remember { mutableStateOf(uiLayers) }
 
-            LaunchedEffect(uiLayers) {
-                localLayers = uiLayers
-            }
-
-            val lazyListState = rememberLazyListState()
-            val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
-                // Update local list
-                localLayers = localLayers.toMutableList().apply {
-                    add(to.index, removeAt(from.index))
-                }
-
-                // Map visual index back to data index
-                val realFrom = layers.lastIndex - from.index
-                val realTo = layers.lastIndex - to.index
-                onReorder(realFrom, realTo)
-            }
-
-            LazyColumn(
-                state = lazyListState,
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                itemsIndexed(localLayers, key = { _, item -> item.uniqueId }) { index, uiLayer ->
-                    ReorderableItem(reorderableState, key = uiLayer.uniqueId) { isDragging ->
-                        val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp)
-
-                        // Calculate real index for callbacks
-                        // Since localLayers is always synced with layers (outside of drag),
-                        // and localLayers is reversed layers, we can map directly.
-                        val realIndex = layers.lastIndex - index
-
-                        LayerItem(
-                            piece = uiLayer.piece,
-                            onDelete = { if (realIndex in layers.indices) onDelete(realIndex) },
-                            onClick = { if (realIndex in layers.indices) onSelectLayer(realIndex) },
-                            modifier = Modifier
-                                .shadow(elevation)
-                                .background(MaterialTheme.colorScheme.surface),
-                            dragHandleModifier = Modifier.draggableHandle(),
-                            isActive = realIndex == layers.lastIndex // Visual Top is Data Last
-                        )
-                    }
-                }
-            }
-
-            Button(
-                onClick = onAdd,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Text(
-                    text = stringResource(R.string.add_layer),
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-            }
+        LaunchedEffect(uiLayers) {
+            localLayers = uiLayers
         }
+
+        val lazyListState = rememberLazyListState()
+        val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
+            localLayers = localLayers.toMutableList().apply {
+                add(to.index, removeAt(from.index))
+            }
+            val realFrom = layers.lastIndex - from.index
+            val realTo = layers.lastIndex - to.index
+            onReorder(realFrom, realTo)
+        }
+
+        LayerList(
+            state = lazyListState,
+            reorderableState = reorderableState,
+            localLayers = localLayers,
+            originalLayers = layers,
+            onDelete = onDelete,
+            onSelectLayer = onSelectLayer
+        )
+
+        AddLayerButton(onAdd)
+    }
+}
+
+@Composable
+private fun rememberUniqueLayers(layers: List<PieceWithDetails>): List<UiLayer> = remember(layers) {
+    val counts = mutableMapOf<Long, Int>()
+    layers.asReversed().map { pieceWithDetails ->
+        val id = pieceWithDetails.piece.id
+        val count = counts.getOrDefault(id, 0)
+        counts[id] = count + 1
+        UiLayer("${id}_$count", pieceWithDetails)
+    }
+}
+
+@Composable
+private fun LayerList(
+    state: LazyListState,
+    reorderableState: ReorderableLazyListState,
+    localLayers: List<UiLayer>,
+    originalLayers: List<PieceWithDetails>,
+    onDelete: (Int) -> Unit,
+    onSelectLayer: (Int) -> Unit
+) {
+    LazyColumn(
+        state = state,
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        itemsIndexed(localLayers, key = { _, item -> item.uniqueId }) { index, uiLayer ->
+            ReorderableLayerRow(
+                reorderableState = reorderableState,
+                uiLayer = uiLayer,
+                index = index,
+                originalLayers = originalLayers,
+                onDelete = onDelete,
+                onSelectLayer = onSelectLayer
+            )
+        }
+    }
+}
+
+@Composable
+private fun LazyItemScope.ReorderableLayerRow(
+    reorderableState: ReorderableLazyListState,
+    uiLayer: UiLayer,
+    index: Int,
+    originalLayers: List<PieceWithDetails>,
+    onDelete: (Int) -> Unit,
+    onSelectLayer: (Int) -> Unit
+) {
+    ReorderableItem(reorderableState, key = uiLayer.uniqueId) { isDragging ->
+        val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp)
+        val realIndex = originalLayers.lastIndex - index
+
+        LayerItem(
+            piece = uiLayer.piece,
+            onDelete = { if (realIndex in originalLayers.indices) onDelete(realIndex) },
+            onClick = { if (realIndex in originalLayers.indices) onSelectLayer(realIndex) },
+            modifier = Modifier
+                .shadow(elevation)
+                .background(MaterialTheme.colorScheme.surface),
+            dragHandleModifier = Modifier.draggableHandle(),
+            isActive = realIndex == originalLayers.lastIndex
+        )
+    }
+}
+
+@Composable
+private fun AddLayerButton(onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Icon(Icons.Default.Add, contentDescription = null)
+        Text(
+            text = stringResource(R.string.add_layer),
+            modifier = Modifier.padding(start = 8.dp)
+        )
     }
 }
 
