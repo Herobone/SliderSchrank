@@ -159,16 +159,21 @@ class HomeScreenState(
         }
 
         val newActive = layers.last()
-        backgroundLayerIds = layers.dropLast(1).map { it.piece.id }
 
-        // Sync Pager
+        // Resolve the slot and index before mutating state to keep pager and layers in sync.
         val slot = Slot.entries.firstOrNull { it.supportsLayers() } ?: return
         val topPieces = groupedPieces[slot] ?: return
         val index = topPieces.indexOfFirst { it.piece.id == newActive.piece.id }
-        if (index != -1) {
-            scope.launch {
-                pagerStates[slot]?.scrollToPage(index)
-            }
+        if (index == -1) {
+            // newActive is not present in the available pieces; avoid desynchronizing state.
+            return
+        }
+
+        backgroundLayerIds = layers.dropLast(1).map { it.piece.id }
+
+        // Sync Pager
+        scope.launch {
+            pagerStates[slot]?.scrollToPage(index)
         }
     }
 }
