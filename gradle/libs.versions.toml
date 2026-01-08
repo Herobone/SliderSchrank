@@ -17,6 +17,7 @@ ksp = "2.3.0"
 camerax = "1.5.2"
 accompanist = "0.37.3"
 coil = "2.7.0"
+mlkitSubjectSegmentation = "16.0.0-beta1"
 reorderable = "2.4.3"
 
 [libraries]
@@ -49,6 +50,7 @@ camerax-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", vers
 camerax-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
 accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }
 reorderable = { group = "sh.calvin.reorderable", name = "reorderable", version.ref = "reorderable" }
+mlkit-subject-segmentation = { group = "com.google.android.gms", name = "play-services-mlkit-subject-segmentation", version.ref = "mlkitSubjectSegmentation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

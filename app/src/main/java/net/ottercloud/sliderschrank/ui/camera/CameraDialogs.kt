@@ -129,3 +129,17 @@ fun CaptureErrorDialog(onDismiss: () -> Unit) {
         }
     )
 }
+
+@Composable
+fun BackgroundRemovalErrorDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.background_removal_failed)) },
+        text = { Text(stringResource(R.string.background_removal_failed_message)) },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.ok))
+            }
+        }
+    )
+}

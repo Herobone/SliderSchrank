@@ -42,6 +42,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -56,12 +57,23 @@ import net.ottercloud.sliderschrank.R
 import net.ottercloud.sliderschrank.ui.controls.CloseButton
 import net.ottercloud.sliderschrank.ui.theme.KeepGreen
 
+/**
+ * Content for displaying a photo preview with options to retake, keep, or close.
+ *
+ * @param bitmap The bitmap to display
+ * @param onRetake Called when the user wants to retake the photo
+ * @param onKeep Called when the user wants to keep/save the photo
+ * @param onClose Called when the user wants to close the preview
+ * @param isProcessing When true, disables all buttons and shows a loading overlay.
+ *                     This prevents user interaction during background processing operations.
+ */
 @Composable
 internal fun PhotoPreviewContent(
     bitmap: Bitmap,
     onRetake: () -> Unit,
     onKeep: () -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    isProcessing: Boolean = false
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -75,10 +87,26 @@ internal fun PhotoPreviewContent(
 
         CloseButton(
             onClick = onClose,
+            enabled = !isProcessing,
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
         )
+
+        // Processing overlay
+        if (isProcessing) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(64.dp)
+                )
+            }
+        }
 
         Row(
             modifier = Modifier
@@ -92,9 +120,13 @@ internal fun PhotoPreviewContent(
             // Retake Button
             IconButton(
                 onClick = onRetake,
+                enabled = !isProcessing,
                 modifier = Modifier
                     .size(64.dp)
-                    .background(color = Color.White, shape = CircleShape)
+                    .background(
+                        color = if (isProcessing) Color.Gray else Color.White,
+                        shape = CircleShape
+                    )
             ) {
                 Icon(
                     imageVector = Icons.Default.Refresh,
@@ -107,9 +139,13 @@ internal fun PhotoPreviewContent(
             // Keep Button
             IconButton(
                 onClick = onKeep,
+                enabled = !isProcessing,
                 modifier = Modifier
                     .size(64.dp)
-                    .background(color = KeepGreen, shape = CircleShape)
+                    .background(
+                        color = if (isProcessing) Color.Gray else KeepGreen,
+                        shape = CircleShape
+                    )
             ) {
                 Icon(
                     imageVector = Icons.Default.Check,

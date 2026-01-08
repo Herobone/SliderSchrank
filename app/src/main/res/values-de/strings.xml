@@ -27,6 +27,8 @@
     <string name="camera_initialization_failed_message">Die Kamera konnte nicht gestartet werden. Bitte versuche es erneut oder starte die App neu.</string>
     <string name="image_capture_failed">Bildaufnahme fehlgeschlagen</string>
     <string name="image_capture_failed_message">Das Foto konnte nicht aufgenommen werden. Bitte versuche es erneut.</string>
+    <string name="background_removal_failed">Hintergrundentfernung fehlgeschlagen</string>
+    <string name="background_removal_failed_message">Der Hintergrund konnte nicht aus dem Bild entfernt werden. Bitte versuche es erneut mit besserer Beleuchtung oder einem anderen Hintergrund.</string>
     <string name="back">Zurück</string>
     <string name="background_cork">Kork</string>
     <string name="background_gray">Grau</string>

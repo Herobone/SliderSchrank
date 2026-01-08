@@ -79,6 +79,9 @@ dependencies {
     implementation(libs.accompanist.permissions)
     implementation(libs.reorderable)
 
+    // ML Kit Subject Segmentation
+    implementation(libs.mlkit.subject.segmentation)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

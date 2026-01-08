@@ -91,6 +91,48 @@ fun rotateBitmap(bitmap: Bitmap, rotationDegrees: Int): Bitmap {
     return rotatedBitmap
 }
 
+/**
+ * Internal helper function to save a bitmap to the media store.
+ *
+ * @param context The context
+ * @param bitmap The bitmap to save
+ * @param fileName The file name
+ * @param mimeType The MIME type (e.g., "image/jpeg" or "image/png")
+ * @param format The compression format
+ * @param quality The compression quality (0-100)
+ * @return The URI of the saved image, or null if saving failed
+ */
+private fun saveBitmapInternal(
+    context: Context,
+    bitmap: Bitmap,
+    fileName: String,
+    mimeType: String,
+    format: Bitmap.CompressFormat,
+    quality: Int
+): android.net.Uri? {
+    val contentValues = ContentValues().apply {
+        put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+        put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SliderSchrank")
+    }
+
+    val uri = context.contentResolver.insert(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        contentValues
+    ) ?: return null
+
+    val success = context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+        bitmap.compress(format, quality, outputStream)
+    } ?: false
+
+    if (!success) {
+        context.contentResolver.delete(uri, null, null)
+        return null
+    }
+
+    return uri
+}
+
 fun saveBitmapToMediaStore(
     context: Context,
     bitmap: Bitmap,
@@ -102,35 +144,65 @@ fun saveBitmapToMediaStore(
             .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
         val fileName = "SliderSchrank_$timestamp.jpg"
 
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SliderSchrank")
-        }
-
-        val uri = context.contentResolver.insert(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            contentValues
+        val uri = saveBitmapInternal(
+            context,
+            bitmap,
+            fileName,
+            "image/jpeg",
+            Bitmap.CompressFormat.JPEG,
+            85
         )
 
         if (uri != null) {
-            val success = context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
-            } ?: false
-            if (success) {
-                Log.i(TAG, "Camera saved Image to: $uri")
-                onSuccess()
-            } else {
-                Log.e(TAG, "Failed to compress bitmap")
-                context.contentResolver.delete(uri, null, null)
-                onError()
-            }
+            Log.i(TAG, "Camera saved Image to: $uri")
+            onSuccess()
         } else {
-            Log.e(TAG, "Failed to create MediaStore entry")
+            Log.e(TAG, "Failed to save bitmap")
             onError()
         }
     } catch (e: Exception) {
         Log.e(TAG, "Image save failed: ${e.message}", e)
+        onError()
+    }
+}
+
+/**
+ * Saves a transparent bitmap as PNG to the media store.
+ *
+ * @param context The context
+ * @param bitmap The bitmap with transparent background
+ * @param onSuccess Called when the image is saved successfully
+ * @param onError Called when an error occurs
+ */
+fun saveTransparentBitmapToMediaStore(
+    context: Context,
+    bitmap: Bitmap,
+    onSuccess: () -> Unit,
+    onError: () -> Unit
+) {
+    try {
+        val timestamp = LocalDateTime.now()
+            .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
+        val fileName = "SliderSchrank_$timestamp.png"
+
+        val uri = saveBitmapInternal(
+            context,
+            bitmap,
+            fileName,
+            "image/png",
+            Bitmap.CompressFormat.PNG,
+            100
+        )
+
+        if (uri != null) {
+            Log.i(TAG, "Saved transparent image to: $uri")
+            onSuccess()
+        } else {
+            Log.e(TAG, "Failed to save transparent bitmap")
+            onError()
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "Transparent image save failed: ${e.message}", e)
         onError()
     }
 }
