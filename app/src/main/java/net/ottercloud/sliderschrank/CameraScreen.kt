@@ -31,14 +31,28 @@ package net.ottercloud.sliderschrank
 import android.Manifest
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CenterFocusStrong
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.ViewDay
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,7 +65,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview as ComposePreview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
@@ -166,76 +179,157 @@ fun CameraScreen(modifier: Modifier = Modifier) {
             .padding(16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Placeholder Area
-        Box(
+        // Tutorial Area
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
-            contentAlignment = Alignment.Center
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(top = 12.dp)
         ) {
             Text(
-                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
-                    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. " +
-                    "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris " +
-                    "nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in " +
-                    "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla " +
-                    "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in " +
-                    "culpa qui officia deserunt mollit anim id est laborum.",
+                text = stringResource(R.string.camera_tutorial_title),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            Text(
+                text = stringResource(R.string.camera_tutorial_description),
                 style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Justify,
-                modifier = Modifier.padding(vertical = 16.dp)
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Tip Cards
+            PhotoTipCard(
+                icon = Icons.Default.LightMode,
+                title = stringResource(R.string.tip_lighting_title),
+                description = stringResource(R.string.tip_lighting_description)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            PhotoTipCard(
+                icon = Icons.Default.Palette,
+                title = stringResource(R.string.tip_background_title),
+                description = stringResource(R.string.tip_background_description)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            PhotoTipCard(
+                icon = Icons.Default.CameraAlt,
+                title = stringResource(R.string.tip_camera_position_title),
+                description = stringResource(R.string.tip_camera_position_description)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            PhotoTipCard(
+                icon = Icons.Default.ViewDay,
+                title = stringResource(R.string.tip_clothing_prep_title),
+                description = stringResource(R.string.tip_clothing_prep_description)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            PhotoTipCard(
+                icon = Icons.Default.CheckCircle,
+                title = stringResource(R.string.tip_contrast_title),
+                description = stringResource(R.string.tip_contrast_description)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            PhotoTipCard(
+                icon = Icons.Default.CenterFocusStrong,
+                title = stringResource(R.string.tip_centering_title),
+                description = stringResource(R.string.tip_centering_description)
             )
         }
 
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Button(
-                onClick = {
-                    if (cameraPermissionState.status.isGranted) {
-                        showFullscreenCamera = true
-                    } else if (permissionPermanentlyDenied) {
-                        showPermissionPermanentlyDeniedDialog = true
-                    } else if (cameraPermissionState.status.shouldShowRationale) {
+        // Camera Button
+        Button(
+            onClick = {
+                if (cameraPermissionState.status.isGranted) {
+                    showFullscreenCamera = true
+                } else if (permissionPermanentlyDenied) {
+                    showPermissionPermanentlyDeniedDialog = true
+                } else if (cameraPermissionState.status.shouldShowRationale) {
+                    permissionRequestLaunched = true
+                    cameraPermissionState.launchPermissionRequest()
+                } else {
+                    val hasAskedBefore = prefs.getBoolean("camera_permission_asked", false)
+
+                    if (!hasAskedBefore) {
+                        prefs.edit { putBoolean("camera_permission_asked", true) }
                         permissionRequestLaunched = true
                         cameraPermissionState.launchPermissionRequest()
                     } else {
-                        val hasAskedBefore = prefs.getBoolean("camera_permission_asked", false)
-
-                        if (!hasAskedBefore) {
-                            prefs.edit { putBoolean("camera_permission_asked", true) }
-                            permissionRequestLaunched = true
-                            cameraPermissionState.launchPermissionRequest()
-                        } else {
-                            showPermissionPermanentlyDeniedDialog = true
-                        }
+                        showPermissionPermanentlyDeniedDialog = true
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Text(stringResource(R.string.take_picture))
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    handleImportFromGallery(context)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Text(stringResource(R.string.import_from_gallery))
-            }
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .padding(top = 12.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.take_picture),
+                style = MaterialTheme.typography.titleMedium
+            )
         }
     }
 }
 
-private fun handleImportFromGallery(context: Context) {
-    // TODO: Hier wird später die GalleryService verwendet
+@Composable
+private fun PhotoTipCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    description: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
 }
 
 private fun resetPermissionFlag(context: Context) {
