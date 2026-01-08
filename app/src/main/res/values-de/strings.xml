@@ -91,4 +91,6 @@
     <string name="dummy_data_added_success">Beispieldaten erfolgreich hinzugefügt!</string>
     <string name="dummy_data_already_exists">Beispieldaten wurden bereits hinzugefügt.</string>
     <string name="image_is_required">Bild ist erforderlich</string>
+    <string name="no_pieces_yet">Noch keine Kleidungsstücke gespeichert</string>
+    <string name="no_outfits_yet">Noch keine Outfits gespeichert</string>
 </resources>

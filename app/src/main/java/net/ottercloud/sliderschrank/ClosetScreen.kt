@@ -29,12 +29,14 @@
 package net.ottercloud.sliderschrank
 
 import android.util.Log
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -47,6 +49,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -109,59 +112,85 @@ fun Closet(navController: NavController, modifier: Modifier = Modifier) {
             }
 
             when (selectedTabIndex) {
-                0 -> FilteredView(
-                    items = pieces,
-                    imageUrlProvider = { it.piece.imageUrl },
-                    tagProvider = { it.tags.map { tag -> tag.name } },
-                    onItemClick = { pieceWithDetails ->
-                        navController.navigate(
-                            "${AppDestinations.PIECE_EDIT.name}?pieceId=${pieceWithDetails.piece.id}"
+                0 -> if (pieces.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.no_pieces_yet),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    },
-                    isFavoriteProvider = { it.piece.isFavorite },
-                    onFavoriteClick = { pieceWithDetails ->
-                        scope.launch {
-                            val updatedPiece = pieceWithDetails.piece.copy(
-                                isFavorite = !pieceWithDetails.piece.isFavorite
+                    }
+                } else {
+                    FilteredView(
+                        items = pieces,
+                        imageUrlProvider = { it.piece.imageUrl },
+                        tagProvider = { it.tags.map { tag -> tag.name } },
+                        onItemClick = { pieceWithDetails ->
+                            navController.navigate(
+                                "${AppDestinations.PIECE_EDIT.name}?pieceId=${pieceWithDetails.piece.id}"
                             )
-                            database.pieceDao().updatePiece(updatedPiece)
-                        }
-                    },
-                    categoryProvider = { it.category?.name },
-                    slotProvider = { it.piece.slot }
-                )
-
-                1 -> FilteredView(
-                    items = outfits,
-                    imageUrlProvider = { it.outfit.imageUrl },
-                    tagProvider = { it.tags.map { tag -> tag.name } },
-                    onItemClick = { outfitWithPieces ->
-                        Log.d(
-                            "ClosetScreen",
-                            "Outfit clicked: ID=${outfitWithPieces.outfit.id}, " +
-                                "pieces=${outfitWithPieces.pieces.map { it.id }}"
-                        )
-                        navController.navigate(
-                            "${AppDestinations.HOME.name}?outfitId=${outfitWithPieces.outfit.id}"
-                        ) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
+                        },
+                        isFavoriteProvider = { it.piece.isFavorite },
+                        onFavoriteClick = { pieceWithDetails ->
+                            scope.launch {
+                                val updatedPiece = pieceWithDetails.piece.copy(
+                                    isFavorite = !pieceWithDetails.piece.isFavorite
+                                )
+                                database.pieceDao().updatePiece(updatedPiece)
                             }
-                            launchSingleTop = true
-                        }
-                    },
-                    isFavoriteProvider = { it.outfit.isFavorite },
-                    onFavoriteClick = { outfitWithPieces ->
-                        scope.launch {
-                            val updatedOutfit = outfitWithPieces.outfit.copy(
-                                isFavorite = !outfitWithPieces.outfit.isFavorite
+                        },
+                        categoryProvider = { it.category?.name },
+                        slotProvider = { it.piece.slot }
+                    )
+                }
+
+                1 -> if (outfits.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.no_outfits_yet),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    FilteredView(
+                        items = outfits,
+                        imageUrlProvider = { it.outfit.imageUrl },
+                        tagProvider = { it.tags.map { tag -> tag.name } },
+                        onItemClick = { outfitWithPieces ->
+                            Log.d(
+                                "ClosetScreen",
+                                "Outfit clicked: ID=${outfitWithPieces.outfit.id}, " +
+                                    "pieces=${outfitWithPieces.pieces.map { it.id }}"
                             )
-                            database.outfitDao().updateOutfit(updatedOutfit)
-                        }
-                    },
-                    gridMinSize = 180,
-                    cardAspectRatio = 0.6f
-                )
+                            navController.navigate(
+                                "${AppDestinations.HOME.name}?outfitId=${outfitWithPieces.outfit.id}"
+                            ) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                            }
+                        },
+                        isFavoriteProvider = { it.outfit.isFavorite },
+                        onFavoriteClick = { outfitWithPieces ->
+                            scope.launch {
+                                val updatedOutfit = outfitWithPieces.outfit.copy(
+                                    isFavorite = !outfitWithPieces.outfit.isFavorite
+                                )
+                                database.outfitDao().updateOutfit(updatedOutfit)
+                            }
+                        },
+                        gridMinSize = 180,
+                        cardAspectRatio = 0.6f
+                    )
+                }
             }
         }
     }

@@ -91,4 +91,6 @@
     <string name="dummy_data_added_success">Dummy data added successfully!</string>
     <string name="dummy_data_already_exists">Dummy data has already been added.</string>
     <string name="image_is_required">Image is required</string>
+    <string name="no_pieces_yet">No pieces saved yet</string>
+    <string name="no_outfits_yet">No outfits saved yet</string>
 </resources>
