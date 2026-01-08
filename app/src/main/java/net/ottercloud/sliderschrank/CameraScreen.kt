@@ -37,8 +37,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -119,10 +121,12 @@ fun CameraScreen(onImageSave: (android.net.Uri) -> Unit, modifier: Modifier = Mo
             cameraPermissionState.status.isGranted -> {
                 permissionRequestLaunched = false
             }
+
             cameraPermissionState.status.shouldShowRationale -> {
                 showPermissionDeniedDialog = true
                 permissionRequestLaunched = false
             }
+
             else -> {
                 showPermissionPermanentlyDeniedDialog = true
                 permissionRequestLaunched = false
@@ -179,7 +183,9 @@ fun CameraScreen(onImageSave: (android.net.Uri) -> Unit, modifier: Modifier = Mo
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .statusBarsPadding()
+            .navigationBarsPadding(),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         // Tutorial Area
@@ -188,7 +194,6 @@ fun CameraScreen(onImageSave: (android.net.Uri) -> Unit, modifier: Modifier = Mo
                 .fillMaxWidth()
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(top = 12.dp)
         ) {
             Text(
                 text = stringResource(R.string.camera_tutorial_title),
