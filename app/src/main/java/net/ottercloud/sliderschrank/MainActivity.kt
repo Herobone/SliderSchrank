@@ -54,6 +54,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import net.ottercloud.sliderschrank.ui.PieceEditScreen
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 
 class MainActivity : AppCompatActivity() {
@@ -140,7 +141,15 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
                     )
                 }
                 composable(AppDestinations.CAMERA.name) {
-                    CameraScreen(modifier = Modifier.fillMaxSize())
+                    CameraScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        onImageSave = { uri ->
+                            val encodedUri = android.net.Uri.encode(uri.toString())
+                            navController.navigate(
+                                "${AppDestinations.PIECE_EDIT.name}?imageUri=$encodedUri"
+                            )
+                        }
+                    )
                 }
                 composable(AppDestinations.CLOSET.name) {
                     Closet(
@@ -152,6 +161,30 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
                     SettingsScreen(
                         modifier = Modifier.fillMaxSize(),
                         navController = navController
+                    )
+                }
+                composable(
+                    route =
+                    "${AppDestinations.PIECE_EDIT.name}?pieceId={pieceId}&imageUri={imageUri}",
+                    arguments = listOf(
+                        navArgument("pieceId") {
+                            type = NavType.LongType
+                            defaultValue = -1L
+                        },
+                        navArgument("imageUri") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        }
+                    )
+                ) { backStackEntry ->
+                    val pieceId = backStackEntry.arguments?.getLong("pieceId")
+                    val imageUri = backStackEntry.arguments?.getString("imageUri")
+                    PieceEditScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        pieceId = pieceId,
+                        imageUri = imageUri,
+                        onNavigateBack = { navController.popBackStack() }
                     )
                 }
             }

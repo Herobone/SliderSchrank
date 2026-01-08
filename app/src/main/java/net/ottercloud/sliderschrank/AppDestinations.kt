@@ -32,6 +32,7 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraEnhance
 import androidx.compose.material.icons.filled.Checkroom
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -47,5 +48,6 @@ enum class AppDestinations(
     HOME(R.string.home, Icons.Default.Home),
     CAMERA(R.string.camera, Icons.Filled.CameraEnhance),
     CLOSET(R.string.closet, Icons.Filled.Checkroom),
+    PIECE_EDIT(R.string.edit_piece, Icons.Filled.Edit, navigatorVisible = false),
     SETTINGS(R.string.settings, Icons.Default.Settings, navigatorVisible = false)
 }

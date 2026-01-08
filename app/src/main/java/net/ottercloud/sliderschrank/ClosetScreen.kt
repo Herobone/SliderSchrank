@@ -119,7 +119,11 @@ fun Closet(navController: NavController, modifier: Modifier = Modifier) {
                     items = pieces,
                     imageUrlProvider = { it.piece.imageUrl },
                     tagProvider = { it.tags.map { tag -> tag.name } },
-                    onItemClick = { /* Handle click */ },
+                    onItemClick = { pieceWithDetails ->
+                        navController.navigate(
+                            "${AppDestinations.PIECE_EDIT.name}?pieceId=${pieceWithDetails.piece.id}"
+                        )
+                    },
                     isFavoriteProvider = { it.piece.isFavorite },
                     onFavoriteClick = { pieceWithDetails ->
                         scope.launch {

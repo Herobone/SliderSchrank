@@ -81,6 +81,7 @@ private enum class CameraViewState {
 @Composable
 fun FullscreenCameraView(
     onClose: () -> Unit,
+    onImageSave: (android.net.Uri) -> Unit,
     onSaveError: () -> Unit,
     onCameraInitError: () -> Unit,
     onCaptureError: () -> Unit,
@@ -258,9 +259,9 @@ fun FullscreenCameraView(
                                 saveTransparentBitmapToMediaStore(
                                     context = context,
                                     bitmap = bitmap,
-                                    onSuccess = {
+                                    onSuccess = { uri ->
                                         cleanupAllBitmaps()
-                                        onClose()
+                                        onImageSave(uri) // Pass URI back
                                     },
                                     onError = {
                                         // Keep the transparent bitmap so user can retry saving

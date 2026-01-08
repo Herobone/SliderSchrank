@@ -32,6 +32,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.ImageCapture
@@ -109,7 +110,7 @@ private fun saveBitmapInternal(
     mimeType: String,
     format: Bitmap.CompressFormat,
     quality: Int
-): android.net.Uri? {
+): Uri? {
     val contentValues = ContentValues().apply {
         put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
         put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
@@ -136,7 +137,7 @@ private fun saveBitmapInternal(
 fun saveBitmapToMediaStore(
     context: Context,
     bitmap: Bitmap,
-    onSuccess: () -> Unit,
+    onSuccess: (Uri) -> Unit,
     onError: () -> Unit
 ) {
     try {
@@ -155,7 +156,7 @@ fun saveBitmapToMediaStore(
 
         if (uri != null) {
             Log.i(TAG, "Camera saved Image to: $uri")
-            onSuccess()
+            onSuccess(uri)
         } else {
             Log.e(TAG, "Failed to save bitmap")
             onError()
@@ -171,13 +172,13 @@ fun saveBitmapToMediaStore(
  *
  * @param context The context
  * @param bitmap The bitmap with transparent background
- * @param onSuccess Called when the image is saved successfully
+ * @param onSuccess Called when the image is saved successfully with the URI
  * @param onError Called when an error occurs
  */
 fun saveTransparentBitmapToMediaStore(
     context: Context,
     bitmap: Bitmap,
-    onSuccess: () -> Unit,
+    onSuccess: (Uri) -> Unit,
     onError: () -> Unit
 ) {
     try {
@@ -196,7 +197,7 @@ fun saveTransparentBitmapToMediaStore(
 
         if (uri != null) {
             Log.i(TAG, "Saved transparent image to: $uri")
-            onSuccess()
+            onSuccess(uri)
         } else {
             Log.e(TAG, "Failed to save transparent bitmap")
             onError()
