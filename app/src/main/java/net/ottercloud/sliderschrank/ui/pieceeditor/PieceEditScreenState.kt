@@ -28,7 +28,7 @@
  */
 @file:JvmName("PieceEditStateKt")
 
-package net.ottercloud.sliderschrank.ui
+package net.ottercloud.sliderschrank.ui.pieceeditor
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +42,7 @@ import net.ottercloud.sliderschrank.data.model.Category
 import net.ottercloud.sliderschrank.data.model.Colour
 import net.ottercloud.sliderschrank.data.model.Piece
 import net.ottercloud.sliderschrank.data.model.Slot
+import net.ottercloud.sliderschrank.data.model.Tag
 
 @Composable
 fun rememberPieceEditState(
@@ -113,7 +114,7 @@ data class PieceEditScreenState(
     val isLoading: Boolean,
     val imageUrl: String?,
     val categories: List<Category>,
-    val allTags: List<net.ottercloud.sliderschrank.data.model.Tag>,
+    val allTags: List<Tag>,
     val onCategoryChange: (Category?) -> Unit,
     val onSlotChange: (Slot) -> Unit,
     val onColourChange: (Colour) -> Unit,

@@ -26,8 +26,9 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank.ui
+package net.ottercloud.sliderschrank.ui.pieceeditor
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -75,7 +76,7 @@ data class PieceEditActions(val onSave: () -> Unit, val onDelete: () -> Unit)
 private suspend fun savePiece(
     database: AppDatabase,
     state: PieceEditScreenState,
-    context: android.content.Context,
+    context: Context,
     onSuccess: () -> Unit
 ) {
     val imageUrl = state.imageUrl ?: ""

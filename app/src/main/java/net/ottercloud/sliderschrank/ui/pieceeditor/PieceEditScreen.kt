@@ -26,10 +26,12 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.ottercloud.sliderschrank.ui
+package net.ottercloud.sliderschrank.ui.pieceeditor
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,8 +44,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -78,7 +83,7 @@ fun PieceEditScreen(
 
 @Composable
 private fun LoadingScreen(modifier: Modifier = Modifier) {
-    androidx.compose.foundation.layout.Box(
+    Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
@@ -91,7 +96,7 @@ private fun PieceEditContent(
     state: PieceEditScreenState,
     actions: PieceEditActions,
     database: AppDatabase,
-    innerPadding: androidx.compose.foundation.layout.PaddingValues
+    innerPadding: PaddingValues
 ) {
     Column(
         modifier = Modifier
@@ -113,8 +118,8 @@ private fun PieceEditContent(
 
 @Composable
 private fun rememberAppDatabase(): AppDatabase {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    return androidx.compose.runtime.remember { AppDatabase.getDatabase(context) }
+    val context = LocalContext.current
+    return remember { AppDatabase.getDatabase(context) }
 }
 
 @Composable
@@ -126,7 +131,7 @@ private fun ImagePreview(imageUrl: String?) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp),
-            contentScale = androidx.compose.ui.layout.ContentScale.Fit
+            contentScale = ContentScale.Fit
         )
     }
 }
