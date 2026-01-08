@@ -34,11 +34,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,7 +52,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import net.ottercloud.sliderschrank.ui.PieceEditScreen
+import net.ottercloud.sliderschrank.ui.pieceeditor.PieceEditScreen
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 
 class MainActivity : AppCompatActivity() {
@@ -115,78 +113,74 @@ private fun SliderSchrankApp(modifier: Modifier = Modifier) {
             }
         }
     ) {
-        Scaffold(
-            modifier = Modifier.fillMaxSize()
-        ) { innerPadding ->
-            val contentModifier = Modifier.padding(innerPadding)
-            NavHost(
-                navController = navController,
-                startDestination = AppDestinations.HOME.name,
-                modifier = contentModifier
-            ) {
-                composable(
-                    route = "${AppDestinations.HOME.name}?outfitId={outfitId}",
-                    arguments = listOf(
-                        navArgument("outfitId") {
-                            type = NavType.LongType
-                            defaultValue = -1L
-                        }
-                    )
-                ) { backStackEntry ->
-                    val outfitId = backStackEntry.arguments?.getLong("outfitId") ?: -1L
-                    Log.d("MainActivity", "HOME composable: outfitId=$outfitId")
-                    HomeScreen(
-                        modifier = Modifier.fillMaxSize(),
-                        loadOutfitId = if (outfitId > 0) outfitId else null
-                    )
-                }
-                composable(AppDestinations.CAMERA.name) {
-                    CameraScreen(
-                        modifier = Modifier.fillMaxSize(),
-                        onImageSave = { uri ->
-                            val encodedUri = android.net.Uri.encode(uri.toString())
-                            navController.navigate(
-                                "${AppDestinations.PIECE_EDIT.name}?imageUri=$encodedUri"
-                            )
-                        }
-                    )
-                }
-                composable(AppDestinations.CLOSET.name) {
-                    Closet(
-                        modifier = Modifier.fillMaxSize(),
-                        navController = navController
-                    )
-                }
-                composable(AppDestinations.SETTINGS.name) {
-                    SettingsScreen(
-                        modifier = Modifier.fillMaxSize(),
-                        navController = navController
-                    )
-                }
-                composable(
-                    route =
-                    "${AppDestinations.PIECE_EDIT.name}?pieceId={pieceId}&imageUri={imageUri}",
-                    arguments = listOf(
-                        navArgument("pieceId") {
-                            type = NavType.LongType
-                            defaultValue = -1L
-                        },
-                        navArgument("imageUri") {
-                            type = NavType.StringType
-                            nullable = true
-                            defaultValue = null
-                        }
-                    )
-                ) { backStackEntry ->
-                    val pieceId = backStackEntry.arguments?.getLong("pieceId")
-                    val imageUri = backStackEntry.arguments?.getString("imageUri")
-                    PieceEditScreen(
-                        modifier = Modifier.fillMaxSize(),
-                        pieceId = pieceId,
-                        imageUri = imageUri,
-                        onNavigateBack = { navController.popBackStack() }
-                    )
-                }
+        NavHost(
+            navController = navController,
+            startDestination = AppDestinations.HOME.name,
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            composable(
+                route = "${AppDestinations.HOME.name}?outfitId={outfitId}",
+                arguments = listOf(
+                    navArgument("outfitId") {
+                        type = NavType.LongType
+                        defaultValue = -1L
+                    }
+                )
+            ) { backStackEntry ->
+                val outfitId = backStackEntry.arguments?.getLong("outfitId") ?: -1L
+                Log.d("MainActivity", "HOME composable: outfitId=$outfitId")
+                HomeScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    loadOutfitId = if (outfitId > 0) outfitId else null
+                )
+            }
+            composable(AppDestinations.CAMERA.name) {
+                CameraScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    onImageSave = { uri ->
+                        val encodedUri = android.net.Uri.encode(uri.toString())
+                        navController.navigate(
+                            "${AppDestinations.PIECE_EDIT.name}?imageUri=$encodedUri"
+                        )
+                    }
+                )
+            }
+            composable(AppDestinations.CLOSET.name) {
+                Closet(
+                    modifier = Modifier.fillMaxSize(),
+                    navController = navController
+                )
+            }
+            composable(AppDestinations.SETTINGS.name) {
+                SettingsScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    navController = navController
+                )
+            }
+            composable(
+                route =
+                "${AppDestinations.PIECE_EDIT.name}?pieceId={pieceId}&imageUri={imageUri}",
+                arguments = listOf(
+                    navArgument("pieceId") {
+                        type = NavType.LongType
+                        defaultValue = -1L
+                    },
+                    navArgument("imageUri") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+                val pieceId = backStackEntry.arguments?.getLong("pieceId")
+                val imageUri = backStackEntry.arguments?.getString("imageUri")
+                PieceEditScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    pieceId = pieceId,
+                    imageUri = imageUri,
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
         }
     }

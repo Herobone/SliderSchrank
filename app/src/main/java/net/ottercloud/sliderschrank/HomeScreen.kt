@@ -32,6 +32,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -140,6 +141,7 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
+                .navigationBarsPadding()
         ) {
             HomeScreenTopBar(
                 isOutfitSaved = state.isCurrentOutfitSaved,
@@ -166,7 +168,6 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
                     onSelectSlot = { slot ->
                         if (slot.supportsLayers()) {
                             showLayerDialog = true
-                            selectedSlotForPicker = slot
                         } else {
                             selectedSlotForPicker = slot
                         }
