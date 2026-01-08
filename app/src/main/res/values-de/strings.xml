@@ -86,5 +86,9 @@
     <string name="slot">Slot</string>
     <string name="name">Name</string>
     <string name="add">Hinzufügen</string>
+    <string name="add_dummy_data">Beispieldaten hinzufügen</string>
+    <string name="add_dummy_data_confirmation">Bist du sicher, dass du Beispieldaten hinzufügen möchtest? Dies fügt mehrere Gegenstände zu deinem Kleiderschrank hinzu.</string>
+    <string name="dummy_data_added_success">Beispieldaten erfolgreich hinzugefügt!</string>
+    <string name="dummy_data_already_exists">Beispieldaten wurden bereits hinzugefügt.</string>
     <string name="image_is_required">Bild ist erforderlich</string>
 </resources>

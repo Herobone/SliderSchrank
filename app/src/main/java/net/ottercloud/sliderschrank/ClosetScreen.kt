@@ -41,7 +41,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -59,7 +58,6 @@ import kotlinx.coroutines.launch
 import net.ottercloud.sliderschrank.data.AppDatabase
 import net.ottercloud.sliderschrank.ui.FilteredView
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
-import net.ottercloud.sliderschrank.util.DummyDataGenerator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,10 +65,6 @@ fun Closet(navController: NavController, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val database = remember { AppDatabase.getDatabase(context) }
     val scope = rememberCoroutineScope()
-
-    LaunchedEffect(Unit) {
-        DummyDataGenerator.generateDummyData(context, database)
-    }
 
     val pieces by database.pieceDao().getAllPiecesWithDetails().collectAsState(
         initial = emptyList()

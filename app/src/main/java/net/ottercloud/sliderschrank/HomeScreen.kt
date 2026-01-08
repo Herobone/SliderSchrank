@@ -55,7 +55,6 @@ import net.ottercloud.sliderschrank.ui.homescreen.HomeScreenTopBar
 import net.ottercloud.sliderschrank.ui.homescreen.PiecePickerDialog
 import net.ottercloud.sliderschrank.ui.homescreen.rememberHomeScreenState
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
-import net.ottercloud.sliderschrank.util.DummyDataGenerator
 import net.ottercloud.sliderschrank.util.SettingsManager
 import net.ottercloud.sliderschrank.util.createFavoriteUtil
 import net.ottercloud.sliderschrank.util.createGroupedPieces
@@ -86,10 +85,6 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
         initial = emptyList()
     )
         ?: remember { mutableStateOf(emptyList()) }
-
-    LaunchedEffect(database) {
-        database?.let { DummyDataGenerator.generateDummyData(context, it) }
-    }
 
     val pieces by database?.pieceDao()?.getAllPiecesWithDetails()?.collectAsState(
         initial = emptyList()

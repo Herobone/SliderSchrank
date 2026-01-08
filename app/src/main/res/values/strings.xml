@@ -86,5 +86,9 @@
     <string name="slot">Slot</string>
     <string name="name">Name</string>
     <string name="add">Add</string>
+    <string name="add_dummy_data">Add Dummy Data</string>
+    <string name="add_dummy_data_confirmation">Are you sure you want to add dummy data? This will add several items to your closet.</string>
+    <string name="dummy_data_added_success">Dummy data added successfully!</string>
+    <string name="dummy_data_already_exists">Dummy data has already been added.</string>
     <string name="image_is_required">Image is required</string>
 </resources>

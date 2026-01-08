@@ -47,9 +47,6 @@ object DummyDataGenerator {
             val categoryDao = database.categoryDao()
             val outfitDao = database.outfitDao()
 
-            // Check if data already exists
-            if (categoryDao.getAllCategoriesSync().isNotEmpty()) return@withContext
-
             // Categories
             val casualCatId = categoryDao.insertCategory(Category(name = "Casual"))
             val formalCatId = categoryDao.insertCategory(Category(name = "Formal"))
