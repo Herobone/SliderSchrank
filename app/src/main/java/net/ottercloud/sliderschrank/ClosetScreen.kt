@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -85,7 +86,13 @@ fun Closet(navController: NavController, modifier: Modifier = Modifier) {
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.closet)) },
+                title = {
+                    Text(
+                        text = stringResource(R.string.closet),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                },
                 actions = {
                     IconButton(onClick = {
                         navController.navigate(AppDestinations.SETTINGS.name)
