@@ -82,7 +82,13 @@ fun Closet(navController: NavController, modifier: Modifier = Modifier) {
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.closet)) },
+                title = {
+                    Text(
+                        text = stringResource(R.string.closet),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                },
                 actions = {
                     IconButton(onClick = {
                         navController.navigate(AppDestinations.SETTINGS.name)

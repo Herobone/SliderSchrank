@@ -61,7 +61,11 @@ fun HomeScreenTopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(stringResource(R.string.your_outfit), style = MaterialTheme.typography.titleLarge)
+        Text(
+            text = stringResource(R.string.your_outfit),
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
         Row {
             IconButton(onClick = onShuffleClick) {
                 Icon(
