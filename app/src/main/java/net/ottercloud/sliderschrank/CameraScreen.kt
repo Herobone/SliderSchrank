@@ -83,7 +83,7 @@ import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraScreen(modifier: Modifier = Modifier) {
+fun CameraScreen(onImageSave: (android.net.Uri) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val prefs = context.getSharedPreferences("camera_prefs", Context.MODE_PRIVATE)
 
@@ -162,6 +162,9 @@ fun CameraScreen(modifier: Modifier = Modifier) {
     if (showFullscreenCamera) {
         FullscreenCameraView(
             onClose = { showFullscreenCamera = false },
+            onImageSave = { uri ->
+                onImageSave(uri)
+            },
             onSaveError = { showSaveErrorDialog = true },
             onCameraInitError = {
                 showFullscreenCamera = false
@@ -342,6 +345,6 @@ private fun resetPermissionFlag(context: Context) {
 @Composable
 private fun CameraScreenPreview() {
     SliderSchrankTheme {
-        CameraScreen()
+        CameraScreen({})
     }
 }

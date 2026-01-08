@@ -32,7 +32,10 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,6 +44,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -55,7 +59,6 @@ import net.ottercloud.sliderschrank.ui.homescreen.HomeScreenTopBar
 import net.ottercloud.sliderschrank.ui.homescreen.PiecePickerDialog
 import net.ottercloud.sliderschrank.ui.homescreen.rememberHomeScreenState
 import net.ottercloud.sliderschrank.ui.theme.SliderSchrankTheme
-import net.ottercloud.sliderschrank.util.DummyDataGenerator
 import net.ottercloud.sliderschrank.util.SettingsManager
 import net.ottercloud.sliderschrank.util.createFavoriteUtil
 import net.ottercloud.sliderschrank.util.createGroupedPieces
@@ -86,10 +89,6 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
         initial = emptyList()
     )
         ?: remember { mutableStateOf(emptyList()) }
-
-    LaunchedEffect(database) {
-        database?.let { DummyDataGenerator.generateDummyData(context, it) }
-    }
 
     val pieces by database?.pieceDao()?.getAllPiecesWithDetails()?.collectAsState(
         initial = emptyList()
@@ -142,6 +141,7 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
+                .navigationBarsPadding()
         ) {
             HomeScreenTopBar(
                 isOutfitSaved = state.isCurrentOutfitSaved,
@@ -149,16 +149,31 @@ fun HomeScreen(modifier: Modifier = Modifier, loadOutfitId: Long? = null) {
                 onFavoriteClick = { state.onFavoriteClick(onToggleFavorite) }
             )
 
-            GarmentSliders(
-                state,
-                onSelectSlot = { slot ->
-                    if (slot.supportsLayers()) {
-                        showLayerDialog = true
-                    } else {
-                        selectedSlotForPicker = slot
-                    }
+            if (pieces.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.no_pieces_yet),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-            )
+            } else {
+                GarmentSliders(
+                    state,
+                    onSelectSlot = { slot ->
+                        if (slot.supportsLayers()) {
+                            showLayerDialog = true
+                        } else {
+                            selectedSlotForPicker = slot
+                        }
+                    }
+                )
+            }
         }
 
         if (showLayerDialog) {

@@ -32,15 +32,17 @@ import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.view.LifecycleCameraController
-import androidx.core.content.ContextCompat
+import androidx.core.graphics.scale
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -56,7 +58,7 @@ fun takePictureForPreview(
     onError: () -> Unit
 ) {
     cameraController.takePicture(
-        ContextCompat.getMainExecutor(context),
+        Executors.newSingleThreadExecutor(),
         object : ImageCapture.OnImageCapturedCallback() {
             override fun onCaptureSuccess(image: ImageProxy) {
                 val bitmap = image.toBitmap()
@@ -65,8 +67,9 @@ fun takePictureForPreview(
 
                 scope.launch(Dispatchers.Default) {
                     val rotatedBitmap = rotateBitmap(bitmap, rotationDegrees)
+                    val scaledBitmap = scaleBitmapDown(rotatedBitmap, 1080)
                     withContext(Dispatchers.Main) {
-                        onCaptured(rotatedBitmap)
+                        onCaptured(scaledBitmap)
                     }
                 }
             }
@@ -77,6 +80,31 @@ fun takePictureForPreview(
             }
         }
     )
+}
+
+private fun scaleBitmapDown(bitmap: Bitmap, maxDimension: Int): Bitmap {
+    val originalWidth = bitmap.width
+    val originalHeight = bitmap.height
+    var newWidth: Int
+    var newHeight: Int
+
+    if (originalHeight > maxDimension || originalWidth > maxDimension) {
+        val ratio = if (originalWidth > originalHeight) {
+            maxDimension.toFloat() / originalWidth
+        } else {
+            maxDimension.toFloat() / originalHeight
+        }
+        newWidth = (originalWidth * ratio).toInt()
+        newHeight = (originalHeight * ratio).toInt()
+    } else {
+        return bitmap
+    }
+
+    val scaled = bitmap.scale(newWidth, newHeight)
+    if (scaled != bitmap && !bitmap.isRecycled) {
+        bitmap.recycle()
+    }
+    return scaled
 }
 
 fun rotateBitmap(bitmap: Bitmap, rotationDegrees: Int): Bitmap {
@@ -109,7 +137,7 @@ private fun saveBitmapInternal(
     mimeType: String,
     format: Bitmap.CompressFormat,
     quality: Int
-): android.net.Uri? {
+): Uri? {
     val contentValues = ContentValues().apply {
         put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
         put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
@@ -133,76 +161,67 @@ private fun saveBitmapInternal(
     return uri
 }
 
-fun saveBitmapToMediaStore(
-    context: Context,
-    bitmap: Bitmap,
-    onSuccess: () -> Unit,
-    onError: () -> Unit
-) {
-    try {
-        val timestamp = LocalDateTime.now()
-            .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
-        val fileName = "SliderSchrank_$timestamp.jpg"
+suspend fun saveBitmapToMediaStore(context: Context, bitmap: Bitmap): Uri? =
+    withContext(Dispatchers.IO) {
+        try {
+            val timestamp = LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
+            val fileName = "SliderSchrank_$timestamp.jpg"
 
-        val uri = saveBitmapInternal(
-            context,
-            bitmap,
-            fileName,
-            "image/jpeg",
-            Bitmap.CompressFormat.JPEG,
-            85
-        )
+            val uri = saveBitmapInternal(
+                context,
+                bitmap,
+                fileName,
+                "image/jpeg",
+                Bitmap.CompressFormat.JPEG,
+                85
+            )
 
-        if (uri != null) {
-            Log.i(TAG, "Camera saved Image to: $uri")
-            onSuccess()
-        } else {
-            Log.e(TAG, "Failed to save bitmap")
-            onError()
+            if (uri != null) {
+                Log.i(TAG, "Camera saved Image to: $uri")
+                uri
+            } else {
+                Log.e(TAG, "Failed to save bitmap")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Image save failed: ${e.message}", e)
+            null
         }
-    } catch (e: Exception) {
-        Log.e(TAG, "Image save failed: ${e.message}", e)
-        onError()
     }
-}
 
 /**
  * Saves a transparent bitmap as PNG to the media store.
  *
  * @param context The context
  * @param bitmap The bitmap with transparent background
- * @param onSuccess Called when the image is saved successfully
- * @param onError Called when an error occurs
+ * @return The URI of the saved image, or null if saving failed
  */
-fun saveTransparentBitmapToMediaStore(
-    context: Context,
-    bitmap: Bitmap,
-    onSuccess: () -> Unit,
-    onError: () -> Unit
-) {
-    try {
-        val timestamp = LocalDateTime.now()
-            .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
-        val fileName = "SliderSchrank_$timestamp.png"
+suspend fun saveTransparentBitmapToMediaStore(context: Context, bitmap: Bitmap): Uri? =
+    withContext(Dispatchers.IO) {
+        try {
+            val timestamp = LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
+            val fileName = "SliderSchrank_$timestamp.png"
 
-        val uri = saveBitmapInternal(
-            context,
-            bitmap,
-            fileName,
-            "image/png",
-            Bitmap.CompressFormat.PNG,
-            100
-        )
+            val uri = saveBitmapInternal(
+                context,
+                bitmap,
+                fileName,
+                "image/png",
+                Bitmap.CompressFormat.PNG,
+                100
+            )
 
-        if (uri != null) {
-            Log.i(TAG, "Saved transparent image to: $uri")
-            onSuccess()
-        } else {
-            Log.e(TAG, "Failed to save transparent bitmap")
-            onError()
+            if (uri != null) {
+                Log.i(TAG, "Saved transparent image to: $uri")
+                uri
+            } else {
+                Log.e(TAG, "Failed to save transparent bitmap")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Transparent image save failed: ${e.message}", e)
+            null
         }
-    } catch (e: Exception) {
-        Log.e(TAG, "Transparent image save failed: ${e.message}", e)
-        onError()
     }
-}
