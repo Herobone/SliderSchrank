@@ -31,6 +31,7 @@ package net.ottercloud.sliderschrank.util
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -49,11 +50,16 @@ class SettingsManager(private val context: Context) {
 
     companion object {
         val BACKGROUND_KEY = stringPreferencesKey("background")
+        val DUMMY_DATA_ADDED_KEY = booleanPreferencesKey("dummy_data_added")
     }
 
     val background: Flow<AppBackground> = dataStore.data.map {
         val key = it[BACKGROUND_KEY] ?: AppBackground.WHITE.key
         AppBackground.fromKey(key)
+    }
+
+    val isDummyDataAdded: Flow<Boolean> = dataStore.data.map {
+        it[DUMMY_DATA_ADDED_KEY] ?: false
     }
 
     suspend fun setBackground(background: AppBackground) {
@@ -62,10 +68,17 @@ class SettingsManager(private val context: Context) {
         }
     }
 
+    suspend fun setDummyDataAdded(added: Boolean) {
+        dataStore.edit {
+            it[DUMMY_DATA_ADDED_KEY] = added
+        }
+    }
+
     suspend fun clearData() {
         dataStore.edit {
             it.clear()
         }
+        // No need to manually reset DUMMY_DATA_ADDED_KEY as it's cleared by it.clear()
         withContext(Dispatchers.IO) {
             AppDatabase.getDatabase(context).clearAllTables()
         }

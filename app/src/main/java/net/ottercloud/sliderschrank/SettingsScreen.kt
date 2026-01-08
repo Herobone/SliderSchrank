@@ -28,6 +28,7 @@
  */
 package net.ottercloud.sliderschrank
 
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -67,6 +68,8 @@ import androidx.core.os.LocaleListCompat
 import androidx.navigation.NavController
 import java.util.Locale
 import kotlinx.coroutines.launch
+import net.ottercloud.sliderschrank.data.AppDatabase
+import net.ottercloud.sliderschrank.util.DummyDataGenerator
 import net.ottercloud.sliderschrank.util.SettingsManager
 
 private enum class ResetDialogState {
@@ -75,18 +78,31 @@ private enum class ResetDialogState {
     Second
 }
 
+private enum class DummyDataDialogState {
+    None,
+    Confirm
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavController, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val database = remember { AppDatabase.getDatabase(context) }
     val settingsManager = remember { SettingsManager(context) }
     val scope = rememberCoroutineScope()
+
+    val successMessage = stringResource(R.string.dummy_data_added_success)
+
     val backgroundOptions = AppBackground.entries
     val currentBackground by settingsManager.background.collectAsState(
         initial = AppBackground.CORK
     )
+    val isDummyDataAdded by settingsManager.isDummyDataAdded.collectAsState(
+        initial = false
+    )
 
     var resetDialogState by rememberSaveable { mutableStateOf(ResetDialogState.None) }
+    var dummyDataDialogState by rememberSaveable { mutableStateOf(DummyDataDialogState.None) }
     var expanded by remember { mutableStateOf(false) }
 
     val languageOptions = AppLanguage.entries
@@ -215,7 +231,58 @@ fun SettingsScreen(navController: NavController, modifier: Modifier = Modifier) 
                     Text(stringResource(R.string.reset_app_title))
                 }
             }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Button(
+                    onClick = {
+                        dummyDataDialogState = DummyDataDialogState.Confirm
+                    },
+                    enabled = !isDummyDataAdded
+                ) {
+                    Text(stringResource(R.string.add_dummy_data))
+                }
+            }
         }
+    }
+
+    when (dummyDataDialogState) {
+        DummyDataDialogState.Confirm -> {
+            AlertDialog(
+                onDismissRequest = { dummyDataDialogState = DummyDataDialogState.None },
+                title = { Text(stringResource(R.string.add_dummy_data)) },
+                text = { Text(stringResource(R.string.add_dummy_data_confirmation)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        dummyDataDialogState = DummyDataDialogState.None
+                        scope.launch {
+                            try {
+                                DummyDataGenerator.generateDummyData(context, database)
+                                settingsManager.setDummyDataAdded(true)
+                                Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(
+                                    context,
+                                    e.localizedMessage ?: "Failed to add dummy data",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }) {
+                        Text(stringResource(R.string.add))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { dummyDataDialogState = DummyDataDialogState.None }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
+        DummyDataDialogState.None -> { /* No dialog */ }
     }
 
     when (resetDialogState) {
