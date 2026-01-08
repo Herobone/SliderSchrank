@@ -63,7 +63,7 @@
     <string name="add_layer">Schicht hinzufügen</string>
     <string name="remove_layer">Schicht entfernen</string>
     <string name="camera_tutorial_title">Kleidungsstücke importieren</string>
-    <string name="camera_tutorial_description">Um ein Kleidungsstück zu importieren musst du es fotografieren, der Hintergrund wird dabei automatisch entfernt. Um optimale Ergebnisse zu erzielen, befolge die folgenden Tipps:</string>
+    <string name="camera_tutorial_description">Um ein Kleidungsstück zu importieren, musst du es fotografieren, der Hintergrund wird dabei automatisch entfernt. Um optimale Ergebnisse zu erzielen, befolge die folgenden Tipps:</string>
     <string name="tip_lighting_title">Optimale Beleuchtung</string>
     <string name="tip_lighting_description">Verwende helles, gleichmäßiges Licht ohne harte Schatten. Tageslicht oder weiche LED-Beleuchtung funktioniert am besten.</string>
     <string name="tip_background_title">Einfarbiger Hintergrund</string>
