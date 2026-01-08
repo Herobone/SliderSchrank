@@ -74,6 +74,9 @@ private enum class CameraViewState {
     /** Processing background removal */
     PROCESSING,
 
+    /** Saving the captured image */
+    SAVING,
+
     /** Showing preview of image with removed background */
     TRANSPARENT_PREVIEW
 }
@@ -245,6 +248,17 @@ fun FullscreenCameraView(
                     )
                 }
 
+                CameraViewState.SAVING -> {
+                    // Show processing indicator while saving
+                    PhotoPreviewContent(
+                        bitmap = transparentBitmap ?: capturedBitmap!!,
+                        onRetake = { /* Disabled during saving */ },
+                        onKeep = { /* Disabled during saving */ },
+                        onClose = { /* Disabled during saving */ },
+                        isProcessing = true
+                    )
+                }
+
                 CameraViewState.TRANSPARENT_PREVIEW -> {
                     // Transparent Photo Preview - user decides to save or discard
                     PhotoPreviewContent(
@@ -256,18 +270,18 @@ fun FullscreenCameraView(
                         onKeep = {
                             // Save only the transparent image
                             transparentBitmap?.let { bitmap ->
-                                saveTransparentBitmapToMediaStore(
-                                    context = context,
-                                    bitmap = bitmap,
-                                    onSuccess = { uri ->
+                                viewState = CameraViewState.SAVING
+                                scope.launch {
+                                    val uri = saveTransparentBitmapToMediaStore(context, bitmap)
+                                    if (uri != null) {
                                         cleanupAllBitmaps()
                                         onImageSave(uri) // Pass URI back
-                                    },
-                                    onError = {
-                                        // Keep the transparent bitmap so user can retry saving
+                                    } else {
+                                        // Saving failed
+                                        viewState = CameraViewState.TRANSPARENT_PREVIEW
                                         onSaveError()
                                     }
-                                )
+                                }
                             }
                         },
                         onClose = {
