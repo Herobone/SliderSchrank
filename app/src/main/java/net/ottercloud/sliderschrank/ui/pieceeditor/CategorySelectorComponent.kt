@@ -71,7 +71,7 @@ fun CategorySelectorComponent(
     val scope = rememberCoroutineScope()
 
     Box(modifier = modifier.fillMaxWidth()) {
-        CategoryInputField(state.selectedCategory) { expanded = true }
+        CategoryInputField(state.selectedCategory)
         Box(modifier = Modifier.matchParentSize().clickable { expanded = true })
 
         CategoryDropdownMenu(
@@ -106,7 +106,7 @@ fun CategorySelectorComponent(
 }
 
 @Composable
-private fun CategoryInputField(selectedCategory: Category?, onExpand: () -> Unit) {
+private fun CategoryInputField(selectedCategory: Category?) {
     OutlinedTextField(
         value = selectedCategory?.name ?: stringResource(R.string.none),
         onValueChange = {},
@@ -115,7 +115,6 @@ private fun CategoryInputField(selectedCategory: Category?, onExpand: () -> Unit
         trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onExpand() }
     )
 }
 
@@ -184,8 +183,8 @@ private fun AddCategoryDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
                 onClick = {
                     if (categoryName.isNotBlank()) {
                         onAdd(categoryName)
+                        onDismiss()
                     }
-                    onDismiss()
                 }
             ) {
                 Text(stringResource(R.string.add))

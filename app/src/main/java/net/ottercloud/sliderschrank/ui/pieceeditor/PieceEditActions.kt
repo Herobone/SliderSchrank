@@ -121,19 +121,17 @@ private suspend fun savePieceData(
 
 private fun buildPiece(state: PieceEditScreenState, imageUrl: String): Piece {
     val existing = state.piece
-    return if (existing != null) {
-        existing.copy(
-            categoryId = state.selectedCategory?.id,
-            slot = state.selectedSlot,
-            colour = state.selectedColour
-        )
-    } else {
-        Piece(
+    return existing?.copy(
+        imageUrl = imageUrl,
+        categoryId = state.selectedCategory?.id,
+        slot = state.selectedSlot,
+        colour = state.selectedColour
+    )
+        ?: Piece(
             imageUrl = imageUrl,
             createdAt = Date(),
             colour = state.selectedColour,
             slot = state.selectedSlot,
             categoryId = state.selectedCategory?.id
         )
-    }
 }

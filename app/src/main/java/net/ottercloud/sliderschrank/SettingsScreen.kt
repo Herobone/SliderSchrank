@@ -259,9 +259,17 @@ fun SettingsScreen(navController: NavController, modifier: Modifier = Modifier) 
                     TextButton(onClick = {
                         dummyDataDialogState = DummyDataDialogState.None
                         scope.launch {
-                            DummyDataGenerator.generateDummyData(context, database)
-                            settingsManager.setDummyDataAdded(true)
-                            Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+                            try {
+                                DummyDataGenerator.generateDummyData(context, database)
+                                settingsManager.setDummyDataAdded(true)
+                                Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(
+                                    context,
+                                    e.localizedMessage ?: "Failed to add dummy data",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                     }) {
                         Text(stringResource(R.string.add))

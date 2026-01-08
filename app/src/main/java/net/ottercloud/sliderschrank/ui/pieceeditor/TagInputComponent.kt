@@ -28,7 +28,6 @@
  */
 package net.ottercloud.sliderschrank.ui.pieceeditor
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -89,13 +88,12 @@ private fun TagChipsList(tags: List<String>, onRemove: (List<String>) -> Unit) {
 private fun TagChip(tag: String, onRemove: () -> Unit) {
     InputChip(
         selected = false,
-        onClick = {},
+        onClick = onRemove,
         label = { Text(tag) },
         trailingIcon = {
             Icon(
                 Icons.Default.Close,
-                contentDescription = null,
-                modifier = Modifier.clickable { onRemove() }
+                contentDescription = null
             )
         }
     )
