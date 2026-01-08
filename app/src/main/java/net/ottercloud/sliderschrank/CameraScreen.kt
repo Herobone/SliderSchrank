@@ -150,7 +150,6 @@ fun CameraScreen(onImageSave: (android.net.Uri) -> Unit, modifier: Modifier = Mo
         FullscreenCameraView(
             onClose = { showFullscreenCamera = false },
             onImageSave = { uri ->
-                showFullscreenCamera = false
                 onImageSave(uri)
             },
             onSaveError = { showSaveErrorDialog = true },

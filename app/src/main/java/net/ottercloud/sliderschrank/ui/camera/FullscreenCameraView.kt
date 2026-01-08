@@ -274,7 +274,6 @@ fun FullscreenCameraView(
                                 scope.launch {
                                     val uri = saveTransparentBitmapToMediaStore(context, bitmap)
                                     if (uri != null) {
-                                        cleanupAllBitmaps()
                                         onImageSave(uri) // Pass URI back
                                     } else {
                                         // Saving failed
